@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Bahasa Indonesia = resource DEFAULT (tanpa akhiran -xx), sesuai bahasa asli aplikasi ini.
+    Terjemahan Inggris ada di values-en/strings.xml. Baru mencakup layar login/landing + TopAppBar
+    dashboard (lihat AuthScreen.kt, MainActivity.kt) - layar lain (Tugas, Chat, Kunci Perangkat,
+    dialog Pengaturan) masih string literal langsung di Kotlin, menyusul di iterasi berikutnya.
+-->
+<resources>
+    <string name="app_settings">Pengaturan</string>
+    <string name="action_logout">Keluar</string>
+    <string name="action_cancel">Batal</string>
+    <string name="parent_password_label">Kata sandi orang tua</string>
+    <string name="parent_password_dialog_body">Minta orang tua memasukkan kata sandi akunnya untuk keluar dari HP ini.</string>
+    <string name="cd_toggle_dark_mode">Ganti mode gelap/terang</string>
+
+    <string name="greeting_headline">Halo!\nSiap kerjakan tugas hari ini?</string>
+    <string name="child_login_subtitle">Masuk pakai kode keluarga dan PIN kamu.</string>
+    <string name="label_family_code">Kode Keluarga</string>
+    <string name="label_pin">PIN</string>
+    <string name="action_child_login">Masuk &amp; Lihat Tugas</string>
+    <string name="link_parent_access">Orang tua? Masuk atau daftar di sini →</string>
+    <string name="option_login_parent_title">Masuk sebagai Orang Tua</string>
+    <string name="option_register_title">Daftar Keluarga Baru</string>
+    <!-- AuthScreen.kt: link teks di bawah tombol Masuk (bukan popup pilihan terpisah lagi). -->
+    <string name="link_switch_to_register">Belum punya akun? Daftar Keluarga Baru</string>
+    <string name="label_family_name">Nama keluarga</string>
+    <string name="label_parent_name">Nama orang tua</string>
+    <string name="label_email">Email</string>
+    <string name="label_password_min8">Kata sandi (minimal 8 karakter)</string>
+    <string name="action_register_family">Daftarkan Keluarga</string>
+    <string name="label_password">Kata sandi</string>
+    <string name="action_login">Masuk</string>
+
+    <!-- Components.kt -->
+    <string name="cd_hide_password">Sembunyikan</string>
+    <string name="cd_show_password">Tampilkan</string>
+    <string name="action_close">Tutup</string>
+
+    <!-- Models.kt: statusLabel() -->
+    <string name="status_assigned">Belum dikirim</string>
+    <string name="status_submitted">Menunggu persetujuan</string>
+    <string name="status_approved">Disetujui</string>
+    <string name="status_rejected">Ditolak</string>
+
+    <!-- Models.kt: activityActionLabel() -->
+    <string name="activity_login">Masuk ke akun</string>
+    <string name="activity_child_added">Menambahkan profil anak</string>
+    <string name="activity_child_removed">Menghapus profil anak</string>
+    <string name="activity_child_pin_reset">Mengatur ulang PIN anak</string>
+    <string name="activity_device_locked">Mengunci perangkat anak</string>
+    <string name="activity_device_unlocked">Membuka kunci perangkat anak</string>
+    <string name="activity_task_created">Membuat tugas baru</string>
+    <string name="activity_task_submitted">Mengirim bukti tugas</string>
+    <string name="activity_task_approved">Menyetujui tugas</string>
+    <string name="activity_task_rejected">Menolak tugas</string>
+    <string name="activity_access_redeemed">Menukar saldo menit jadi waktu akses</string>
+    <string name="activity_backup_created">Mengunduh backup terenkripsi</string>
+    <string name="activity_password_changed">Mengubah kata sandi</string>
+    <string name="role_parent_suffix">" (Orang Tua) "</string>
+    <string name="role_child_suffix">" (Anak) "</string>
+
+    <!-- ParentScreen.kt: tab -->
+    <string name="tab_dashboard">Dashboard</string>
+    <string name="tab_tasks">Tugas</string>
+    <string name="tab_approval">Approval</string>
+    <string name="tab_chat">Chat</string>
+    <string name="tab_lock">Kunci</string>
+
+    <!-- ParentScreen.kt: ParentSettingsDialog -->
+    <string name="heading_child_profiles">Profil Anak</string>
+    <string name="desc_child_pin_encrypted">PIN anak disimpan terenkripsi dan tidak bisa ditampilkan ulang. Kalau anak lupa PIN, gunakan Reset PIN.</string>
+    <string name="empty_no_children">Belum ada profil anak.</string>
+    <string name="cd_reset_pin_for">Reset PIN %1$s</string>
+    <string name="cd_delete_for">Hapus %1$s</string>
+    <string name="hint_add_child_moved">Tambah profil anak baru sekarang ada di tab Kunci Perangkat.</string>
+    <string name="heading_activity_log">Log Aktivitas</string>
+    <string name="empty_no_activity">Belum ada aktivitas tercatat.</string>
+    <string name="title_delete_child_confirm">Hapus profil %1$s?</string>
+    <string name="body_delete_child_confirm">Semua tugas, riwayat chat, dan foto bukti miliknya akan ikut terhapus, dan perangkat anak ini akan otomatis keluar. Tindakan ini tidak bisa dibatalkan.</string>
+    <string name="action_delete">Hapus</string>
+    <string name="heading_uninstall_protection">Proteksi Anti-Uninstall</string>
+    <string name="desc_uninstall_protection">Setelah diaktifkan, aplikasi ini tidak bisa langsung dihapus dari HP - harus dinonaktifkan dulu lewat Pengaturan sistem &gt; Keamanan &gt; Aplikasi admin perangkat, bukan tombol "Uninstall" biasa. Tetap bisa dinonaktifkan kapan saja oleh siapa pun yang punya akses ke Pengaturan sistem.</string>
+    <string name="status_uninstall_protection_active">✓ Aktif</string>
+    <string name="status_uninstall_protection_inactive">Belum aktif</string>
+    <string name="action_enable_uninstall_protection">Aktifkan Proteksi Anti-Uninstall</string>
+    <string name="hint_disable_uninstall_protection">Untuk menonaktifkan: Pengaturan sistem HP &gt; Keamanan &gt; Aplikasi admin perangkat &gt; TimeCraft &gt; Nonaktifkan.</string>
+    <string name="desc_device_admin_explanation">TimeCraft memakai izin ini HANYA supaya aplikasi tidak bisa langsung dihapus dari HP anak - tidak untuk mengunci layar, menghapus data, atau kontrol perangkat lainnya.</string>
+    <string name="warning_device_admin_disable">Menonaktifkan ini akan mengizinkan TimeCraft dihapus langsung dari HP. Pastikan ini memang persetujuan orang tua.</string>
+    <string name="heading_danger_zone">Zona Berbahaya</string>
+    <string name="desc_delete_account">Menghapus akun ini akan menghapus SELURUH keluarga secara permanen: akun orang tua, semua profil anak, tugas, riwayat chat, dan log aktivitas. Tindakan ini tidak bisa dibatalkan.</string>
+    <string name="action_delete_account">Hapus Akun</string>
+    <string name="title_delete_account_confirm">Hapus akun secara permanen?</string>
+    <string name="body_delete_account_confirm">Semua data keluarga ini (akun orang tua, profil anak, tugas, foto bukti, dan riwayat chat) akan dihapus permanen dari server dan tidak bisa dikembalikan. Masukkan kata sandi kamu untuk konfirmasi.</string>
+    <string name="info_account_deleted">Akun dan semua data keluarga sudah dihapus permanen.</string>
+    <string name="heading_account">Akun</string>
+    <string name="action_change_password">Ubah Kata Sandi</string>
+    <string name="title_change_password">Ubah Kata Sandi</string>
+    <string name="label_current_password">Kata sandi saat ini</string>
+    <string name="label_new_password">Kata sandi baru</string>
+    <string name="info_password_changed">Kata sandi berhasil diubah. Perangkat lain yang masih login otomatis keluar.</string>
+
+    <!-- TutorialOverlay.kt: tur coach-mark Dashboard orang tua, ditampilkan otomatis sekali saat
+         pertama kali orang tua melihat Dashboard, bisa diulang lewat Pengaturan. -->
+    <string name="tutorial_step_counter">Langkah %1$d dari %2$d</string>
+    <string name="action_skip_tutorial">Lewati</string>
+    <string name="action_next_tutorial">Lanjut</string>
+    <string name="action_finish_tutorial">Selesai</string>
+    <string name="action_replay_tutorial">Lihat Tutorial Lagi</string>
+    <string name="tutorial_step_family_code">Ini kode keluarga kamu. Masukkan kode ini di HP anak saat pertama kali login sebagai anak, supaya akunnya terhubung ke keluarga ini.</string>
+    <string name="tutorial_step_tab_dashboard">Tab Dashboard - ringkasan cepat keluarga: kode keluarga, statistik, dan tugas yang belum selesai.</string>
+    <string name="tutorial_step_tab_tasks">Tab Tugas - lihat semua daftar tugas dan buat tugas baru dari sini.</string>
+    <string name="tutorial_step_tab_approval">Tab Approval - setujui atau tolak tugas yang sudah dikirim anak, lengkap dengan buktinya.</string>
+    <string name="tutorial_step_tab_chat">Tab Chat - kirim pesan/foto ke semua anak sekaligus, atau ke satu anak secara pribadi.</string>
+    <string name="tutorial_step_tab_lock">Tab Kunci Perangkat - kunci/buka HP anak, dan tambah profil anak baru di sini.</string>
+    <string name="tutorial_step_incomplete_tasks">Pantau tugas yang belum selesai untuk tiap anak di kartu ini, langsung dari Dashboard.</string>
+    <string name="tutorial_step_create_task">Tekan tombol ini untuk membuat tugas baru untuk anak.</string>
+    <string name="tutorial_step_topbar_language">Ganti bahasa aplikasi antara Bahasa Indonesia dan English.</string>
+    <string name="tutorial_step_topbar_theme">Beralih mode terang/gelap kapan saja.</string>
+    <string name="tutorial_step_topbar_backup">Buat cadangan data keluarga terenkripsi, tersimpan langsung di HP kamu.</string>
+    <string name="tutorial_step_topbar_settings">Buka Pengaturan - ubah kata sandi, hapus profil anak, lihat log aktivitas, aktifkan proteksi anti-uninstall, dan buka Panduan Penggunaan lengkap.</string>
+
+    <!-- GuideDialog.kt: Panduan Penggunaan - referensi teks lengkap, beda dari tur coach-mark
+         di atas (yang cuma menyorot 4 elemen Dashboard). Dibuka dari Pengaturan. -->
+    <string name="action_open_guide">Panduan Penggunaan</string>
+
+    <string name="guide_title_add_child">Tambah Profil Anak</string>
+    <string name="guide_steps_add_child">Buka tab \"Kunci Perangkat\" (ikon gembok di menu bawah).\nTekan tombol \"+ Tambah Anak\".\nIsi nama anak dan PIN 4-8 digit, lalu simpan.\nKode keluarga otomatis muncul di kartu Dashboard - anak memakainya untuk login pertama kali.</string>
+
+    <string name="guide_title_create_task">Membuat Tugas Baru</string>
+    <string name="guide_steps_create_task">Dari Dashboard, tekan tombol \"+\" di pojok kanan bawah (atau buka tab \"Tugas\" lalu tekan \"Tambah Tugas\").\nPilih anak yang dituju.\nIsi judul, deskripsi (opsional), dan jumlah menit hadiah.\nTekan simpan - tugas langsung muncul di HP anak.</string>
+
+    <string name="guide_title_approval">Menyetujui/Menolak Tugas</string>
+    <string name="guide_steps_approval">Buka tab \"Approval\" - badge angka menunjukkan jumlah tugas yang menunggu.\nTekan salah satu tugas untuk lihat detail dan bukti yang dikirim anak.\nTekan \"Setujui\" atau \"Tolak\", boleh tambahkan catatan.\nKalau disetujui, menit hadiahnya otomatis masuk ke saldo akses anak.</string>
+
+    <string name="guide_title_chat">Chat dengan Anak</string>
+    <string name="guide_steps_chat">Buka tab \"Chat\".\nPilih \"Semua Anak\" untuk chat grup keluarga, atau nama anak tertentu untuk chat pribadi.\nKetik pesan atau tekan ikon kamera/galeri untuk kirim foto, lalu tekan kirim.\nTekan lama (long-press) satu pesan untuk memberi reaksi emoji atau membalasnya.</string>
+
+    <string name="guide_title_lock">Mengunci Perangkat Anak</string>
+    <string name="guide_steps_lock">Buka tab \"Kunci Perangkat\".\nNyalakan toggle di samping nama anak yang mau dikunci.\nPerangkat anak langsung menampilkan layar kunci TimeCraft sampai dimatikan lagi.\nPastikan izin \"Tampil di atas aplikasi lain\" sudah diaktifkan di HP anak saat pertama kali pasang aplikasi, supaya fitur ini bisa berjalan.</string>
+
+    <string name="guide_title_backup">Membuat Backup Data</string>
+    <string name="guide_steps_backup">Tekan ikon awan (unduh) di pojok kanan atas layar.\nBuat kata sandi backup (minimal 8 karakter) dan ulangi untuk konfirmasi.\nFile JSON terenkripsi akan tersimpan ke lokasi yang kamu pilih di HP.\nSimpan kata sandi ini baik-baik - tanpa itu, file backup tidak bisa dibuka lagi (server tidak menyimpannya).</string>
+
+    <string name="guide_title_change_password">Mengubah Kata Sandi</string>
+    <string name="guide_steps_change_password">Tekan ikon gerigi (Pengaturan) di pojok kanan atas.\nDi bagian \"Akun\", tekan \"Ubah Kata Sandi\".\nMasukkan kata sandi saat ini, lalu kata sandi baru (minimal 8 karakter).\nPerangkat lain yang masih login dengan kata sandi lama otomatis keluar - HP ini sendiri tetap login.</string>
+
+    <string name="guide_title_delete_child">Menghapus Profil Anak</string>
+    <string name="guide_steps_delete_child">Tekan ikon gerigi (Pengaturan).\nCari nama anak di daftar \"Profil Anak\".\nTekan ikon tempat sampah merah di sampingnya, lalu konfirmasi.\nSemua tugas, riwayat chat, dan foto bukti milik anak itu ikut terhapus permanen - tindakan ini tidak bisa dibatalkan.</string>
+
+    <string name="guide_title_activity_log">Melihat Log Aktivitas</string>
+    <string name="guide_steps_activity_log">Tekan ikon gerigi (Pengaturan).\nScroll ke bagian \"Log Aktivitas\".\nLihat riwayat tindakan di keluarga ini (login, kunci/buka perangkat, tugas dibuat/disetujui, dst) beserta waktunya.\nLog ini hanya bisa dilihat orang tua - transparan, bukan pengawasan tersembunyi ke anak.</string>
+
+    <string name="guide_title_theme">Mengubah Mode Terang/Gelap</string>
+    <string name="guide_steps_theme">Tekan ikon bulan/matahari di pojok kanan atas layar.\nTampilan langsung berganti mode terang atau gelap.\nPilihan ini otomatis diingat untuk pemakaian berikutnya.</string>
+
+    <string name="guide_title_language">Mengganti Bahasa Aplikasi</string>
+    <string name="guide_steps_language">Tekan ikon \"文A\" (Translate) di pojok kanan atas layar.\nPilih \"Bahasa Indonesia\" atau \"English\".\nAplikasi akan memuat ulang sebentar dengan bahasa yang baru dipilih.</string>
+
+    <!-- ParentScreen.kt: Backup -->
+    <string name="heading_backup_data">Cadangan Data</string>
+    <string name="desc_backup">Unduh salinan data keluarga (profil anak, tugas, riwayat chat) sebagai berkas terenkripsi ke penyimpanan HP kamu. Kata sandinya kamu tentukan sendiri - server TIDAK menyimpannya.</string>
+    <string name="action_download_backup_encrypted">Unduh Backup Terenkripsi</string>
+    <string name="toast_backup_saved">Backup terenkripsi berhasil disimpan. Simpan kata sandinya baik-baik - server TIDAK menyimpannya.</string>
+    <string name="toast_backup_save_failed">Gagal menyimpan berkas backup.</string>
+    <string name="error_backup_create_failed">Gagal membuat backup.</string>
+    <string name="desc_backup_password">Buat kata sandi backup (minimal 8 karakter). Kata sandi ini HARUS kamu ingat sendiri - dipakai lagi nanti untuk membuka berkas ini, server tidak menyimpannya sama sekali.</string>
+    <string name="label_backup_password">Kata sandi backup</string>
+    <string name="label_repeat_password">Ulangi kata sandi</string>
+    <string name="error_password_mismatch">Kata sandi tidak sama.</string>
+    <string name="action_download_backup_short">Unduh Backup</string>
+
+    <!-- ParentScreen.kt: Reset PIN -->
+    <string name="body_reset_pin">PIN lama langsung tidak berlaku begitu PIN baru disimpan. Beri tahu PIN baru ini ke %1$s secara langsung.</string>
+    <string name="label_new_pin">PIN baru (4-8 digit)</string>
+    <string name="action_save_new_pin">Simpan PIN Baru</string>
+
+    <!-- ParentScreen.kt: Dashboard -->
+    <string name="label_family_fallback">Keluarga</string>
+    <string name="hint_no_children_add">Belum ada profil anak. Tambah lewat ikon gerigi Pengaturan di kanan atas.</string>
+    <string name="stat_pending_approval">Menunggu Approval</string>
+    <string name="stat_children">Anak</string>
+    <string name="stat_locked">Terkunci</string>
+    <string name="stat_total_tasks">Total Tugas</string>
+    <string name="action_create_task">Buat Tugas</string>
+    <string name="empty_no_pending_approval">Tidak ada tugas yang menunggu approval.</string>
+    <string name="count_pending_tasks">%1$d tugas tertunda</string>
+    <string name="title_locked_devices">Perangkat Terkunci</string>
+    <string name="empty_no_locked_devices">Tidak ada perangkat yang terkunci saat ini.</string>
+    <string name="action_unlock">Buka Kunci</string>
+    <string name="title_all_tasks">Semua Tugas</string>
+    <string name="empty_no_tasks">Belum ada tugas.</string>
+    <string name="heading_incomplete_tasks">Tugas Belum Selesai</string>
+    <string name="count_pending_short">%1$d tertunda</string>
+    <string name="empty_all_tasks_done">Semua tugas sudah selesai.</string>
+    <string name="heading_last_group_chat">Percakapan Grup Terakhir</string>
+    <string name="empty_no_group_chat">Belum ada percakapan di grup keluarga.</string>
+    <string name="label_you">Kamu</string>
+    <string name="label_parent_role">Orang Tua</string>
+    <string name="label_photo_preview">📷 Foto</string>
+    <string name="empty_no_filtered_tasks">Tidak ada tugas yang cocok dengan filter.</string>
+    <string name="empty_no_submitted_tasks">Belum ada tugas yang dikirim anak.</string>
+    <string name="label_all_children">Semua Anak</string>
+    <string name="empty_no_children_for_chat">Belum ada profil anak untuk diajak chat.</string>
+    <string name="label_none_locked">Tidak ada yang dikunci</string>
+    <string name="count_locked_of_total">%1$d dari %2$d anak dikunci</string>
+    <string name="label_child_singular">Anak</string>
+    <!-- Nama anak di daftar toggle kunci perangkat - diberi awalan "Perangkat" karena yang
+         dikunci/dibuka sebenarnya perangkat anak itu, bukan anaknya sendiri. -->
+    <string name="label_device_of_child">Perangkat %1$s</string>
+
+    <!-- ParentScreen.kt: Kunci, WaitingTaskCard, dokumen bukti -->
+    <string name="action_add_child">+ Tambah Anak</string>
+    <string name="label_child_colon">Anak: %1$s</string>
+    <string name="label_reward_minutes">Hadiah: %1$d menit akses</string>
+    <string name="label_evidence_colon">Bukti: %1$s</string>
+    <string name="action_approve">Setujui</string>
+    <string name="action_reject">Tolak</string>
+    <string name="cd_task_evidence_photo">Foto bukti tugas</string>
+    <string name="cd_task_evidence_document">Dokumen bukti tugas</string>
+    <string name="cd_failed_to_load">Gagal memuat</string>
+    <string name="cd_evidence_preview">Pratinjau foto bukti</string>
+    <string name="error_no_app_for_file">Tidak ada aplikasi yang bisa membuka jenis berkas ini di HP ini.</string>
+    <string name="title_reject_task">Tolak \"%1$s\"?</string>
+    <string name="desc_reject_task">Anak akan melihat tugas ini perlu diulang. Beri tahu alasannya (opsional).</string>
+    <string name="label_note_for_child">Catatan untuk anak</string>
+    <string name="action_reject_task">Tolak Tugas</string>
+    <string name="count_minutes_short">%1$d menit</string>
+    <string name="label_evidence_text_colon">Bukti (teks): %1$s</string>
+    <string name="label_evidence_files_colon">Berkas bukti:</string>
+    <string name="label_parent_note_colon">Catatan orang tua: %1$s</string>
+    <string name="label_status">Status</string>
+    <string name="label_all_statuses">Semua Status</string>
+    <string name="title_add_child_profile">Tambah profil anak</string>
+    <string name="label_child_name">Nama anak</string>
+    <string name="label_pin_4to8">PIN (4-8 digit)</string>
+    <string name="action_save">Simpan</string>
+    <string name="title_create_task">Buat tugas baru</string>
+    <string name="label_task_title">Judul tugas</string>
+    <string name="label_description_optional">Deskripsi (opsional)</string>
+    <string name="label_reward_minutes_field">Hadiah (menit, 1-240)</string>
+
+    <!-- ChildScreen.kt -->
+    <string name="stat_not_submitted">Belum Dikirim</string>
+    <string name="empty_all_tasks_done_child">Semua tugas sudah selesai. Mantap!</string>
+    <string name="empty_no_tasks_from_parent">Belum ada tugas dari orang tua.</string>
+    <string name="label_family_all">Keluarga (Semua)</string>
+    <string name="label_private_with_parent">Pribadi dengan Orang Tua</string>
+    <string name="heading_device_lock">Kunci Perangkat</string>
+    <string name="label_permission_granted">Izin diberikan</string>
+    <string name="label_permission_not_granted">Izin belum diberikan</string>
+    <string name="desc_lock_permission_granted">Orang tua bisa mengunci akses ke aplikasi lain kalau perlu. Kamu bisa mencabut izin ini kapan saja lewat Pengaturan HP.</string>
+    <string name="desc_lock_permission_not_granted">Supaya orang tua bisa mengunci akses aplikasi lain kalau perlu, izinkan akses berikut lewat Pengaturan HP. Bisa dicabut kapan saja.</string>
+    <string name="action_allow_overlay">Izinkan Tampil di Atas Aplikasi Lain</string>
+    <string name="desc_lock_child_note">Kunci/buka kunci perangkat hanya bisa diatur oleh orang tua. Kamu tetap bisa memakai saldo menit hadiah untuk membuka akses sementara lewat tab Dashboard.</string>
+    <string name="label_name">Nama</string>
+    <string name="desc_logout_hint">Untuk keluar dari akun ini, gunakan tombol \"Keluar\" di pojok kanan atas.</string>
+    <string name="heading_access_balance">Saldo Akses Hadiah</string>
+    <string name="label_from_approved_tasks">dari %1$d tugas disetujui</string>
+    <string name="label_access_active_remaining">Akses aktif · sisa %1$s</string>
+    <string name="action_add_time">Tambah Waktu</string>
+    <string name="action_use_time">Gunakan Waktu</string>
+    <string name="desc_redeem_balance">Saldo kamu %1$d menit. Berapa menit mau dipakai sekarang? Sisanya tetap tersimpan.</string>
+    <string name="label_minutes">Menit</string>
+    <string name="action_use">Gunakan</string>
+    <string name="action_submit_as_done">Kirim sebagai selesai</string>
+    <string name="error_unsupported_file_type">Jenis berkas tidak didukung (harus JPEG, PNG, PDF, Word, Excel, PowerPoint, atau TXT).</string>
+    <string name="error_file_unreadable">Berkas tidak dapat dibaca.</string>
+    <string name="error_file_too_large">Berkas terlalu besar (maksimal 5MB per berkas).</string>
+    <string name="label_file_fallback">Berkas</string>
+    <string name="title_submit_task">Kirim \"%1$s\" sebagai selesai</string>
+    <string name="desc_submit_evidence">Ceritakan apa yang sudah kamu lakukan, dan lampirkan foto/dokumen sebagai bukti (opsional, sampai %1$d berkas).</string>
+    <string name="label_evidence_text">Bukti selesai (teks)</string>
+    <string name="error_max_evidence_files">Maksimal %1$d berkas bukti.</string>
+    <string name="hint_max_evidence_reached">Maksimal %1$d berkas tercapai.</string>
+    <string name="action_take_photo">Ambil Foto</string>
+    <string name="action_pick_file">Pilih Berkas</string>
+    <string name="action_send">Kirim</string>
+    <string name="cd_remove_attachment">Hapus lampiran</string>
+    <string name="label_photo_camera">Foto</string>
+
+    <!-- ChatScreen.kt -->
+    <string name="error_send_photo_failed">Gagal mengirim foto.</string>
+    <string name="error_read_photo_failed">Gagal membaca foto yang dipilih.</string>
+    <string name="error_react_failed">Gagal memberi reaksi.</string>
+    <string name="error_send_message_failed">Gagal mengirim pesan.</string>
+    <string name="empty_no_chat_messages">Belum ada percakapan. Kirim pesan pertama!</string>
+    <string name="label_replying_to">Membalas %1$s: %2$s</string>
+    <string name="cd_cancel_reply">Batal balas</string>
+    <string name="cd_send_photo_camera">Kirim foto dari kamera</string>
+    <string name="cd_send_photo_gallery">Kirim foto dari galeri</string>
+    <string name="placeholder_write_message">Tulis pesan…</string>
+    <string name="action_reply_short">↩ Balas</string>
+    <string name="action_react_short">🙂 Reaksi</string>
+    <string name="cd_chat_photo">Foto chat</string>
+    <string name="label_photo_unavailable">Foto tidak tersedia</string>
+    <string name="cd_chat_photo_preview">Pratinjau foto chat</string>
+
+    <!-- DeviceLockService.kt (bukan Compose - dipakai via Context.getString()) -->
+    <string name="title_device_locked">Perangkat Terkunci</string>
+    <string name="body_device_locked_message">Orang tua sedang mengaktifkan mode kunci. Buka TimeCraft untuk melihat tugas dan saldo hadiahmu.</string>
+    <string name="action_open_timecraft">Buka TimeCraft</string>
+    <string name="channel_device_control">Kontrol Perangkat</string>
+    <string name="notif_title_device_control_active">TimeCraft - Kontrol Perangkat aktif</string>
+    <string name="notif_text_monitoring_lock">Memantau status kunci dari orang tua.</string>
+
+    <!-- AppViewModel.kt (bukan Compose - dipakai via getApplication<Application>().getString()) -->
+    <string name="error_session_expired">Sesi berakhir, silakan masuk kembali.</string>
+    <string name="error_wrong_parent_password">Kata sandi orang tua salah.</string>
+    <string name="error_no_connection">Tidak dapat terhubung ke server. Periksa koneksi internet.</string>
+    <string name="info_child_added">Profil anak berhasil ditambahkan.</string>
+    <string name="info_child_deleted">Profil anak dihapus.</string>
+    <string name="info_pin_reset">PIN anak berhasil diatur ulang.</string>
+    <string name="info_task_created">Tugas berhasil dibuat.</string>
+    <string name="info_task_submitted">Tugas berhasil dikirim, menunggu persetujuan orang tua.</string>
+    <string name="info_task_approved">Tugas disetujui.</string>
+    <string name="info_task_rejected">Tugas ditolak.</string>
+    <string name="info_access_unlocked">Waktu akses dibuka selama %1$d menit.</string>
+    <string name="info_device_locked">Perangkat anak dikunci.</string>
+    <string name="info_device_unlocked">Kunci perangkat dibuka.</string>
+    <string name="error_generic">Terjadi kesalahan.</string>
+</resources>

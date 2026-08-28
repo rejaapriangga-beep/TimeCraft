@@ -1,0 +1,69 @@
+package com.keluargakendali.ui.theme
+
+import androidx.compose.ui.graphics.Color
+
+/**
+ * Palet hangat Pactio — terracotta/koral sebagai warna utama, emas untuk elemen hadiah,
+ * hijau/merah yang diredam untuk status. Sengaja BUKAN hijau-merah ala aplikasi
+ * saham/trading — ini aplikasi keluarga, jadi nadanya harus hangat dan ramah.
+ * Diambil dari mockup yang sudah disetujui (canvas "Pactio Mobile UI").
+ *
+ * PactioBackground sebelumnya krem hangat (0xFFFAF6F1) - diganti putih polos (gaya Stockbit,
+ * dasar bersih) supaya latar tidak "menyaingi" warna aksen kartu/ikon yang justru ingin
+ * ditonjolkan (lihat DashboardStatCard/ChildStatCard). Kartu (PactioSurface) tetap dipertahankan
+ * hampir-putih seperti semula, dibedakan dari latar lewat PactioBorder tipis, bukan warna.
+ */
+val PactioBackground = Color(0xFFFFFFFF)
+val PactioSurface = Color(0xFFFEFCFA)
+val PactioBorder = Color(0xFFE4DDD4)
+val PactioTextPrimary = Color(0xFF2E2622)
+val PactioTextMuted = Color(0xFF7D7269)
+
+val PactioCoral = Color(0xFFE2623C)
+val PactioCoralDark = Color(0xFFC24E2C)
+val PactioCoralSoft = Color(0xFFFBE6DD)
+
+val PactioGold = Color(0xFFDFA94D)
+val PactioGoldOn = Color(0xFF7A5A1E)
+val PactioGoldSoft = Color(0xFFFBEFD9)
+
+val PactioGreen = Color(0xFF4C9B6B)
+val PactioGreenOn = Color(0xFF285C3E)
+val PactioGreenSoft = Color(0xFFE1F3E7)
+
+val PactioRed = Color(0xFFC94A3D)
+val PactioRedOn = Color(0xFF7A2A22)
+val PactioRedSoft = Color(0xFFFBE4E1)
+
+/**
+ * Track saklar (Switch) saat NONAKTIF - lebih gelap dari PactioBorder yang biasa dipakai untuk
+ * garis tepi kartu (border kartu memang sengaja tipis/pucat, tapi kalau dipakai juga untuk track
+ * saklar, saklar itu jadi nyaris tidak kelihatan di atas PactioBackground yang senada). Sama
+ * dengan warna track "off" di web/app.css (.switch-slider).
+ */
+val PactioSwitchTrackOff = Color(0xFFD9C6B2)
+
+// --- Palet mode gelap ---
+// Hue aksen (koral/emas/hijau/merah) dipertahankan sama supaya tetap terasa "TimeCraft", hanya
+// dinaikkan sedikit terangnya (lebih pucat) supaya kontras cukup di atas latar gelap - warna
+// solid yang sama seperti mode terang akan terlihat terlalu redup/kusam di latar gelap.
+val PactioBackgroundDark = Color(0xFF17130F)
+val PactioSurfaceDark = Color(0xFF231D18)
+val PactioBorderDark = Color(0xFF3D342C)
+val PactioTextPrimaryDark = Color(0xFFF3ECE6)
+val PactioTextMutedDark = Color(0xFFB8AA9D)
+
+val PactioCoralOnDark = Color(0xFFFF9269)
+val PactioCoralSoftDark = Color(0xFF4A2B1E)
+val PactioCoralDarkOnDark = Color(0xFFFFD9C7)
+
+val PactioGoldOnDark = Color(0xFFF0C374)
+val PactioGoldSoftDark = Color(0xFF4A3A16)
+
+val PactioGreenOnDark = Color(0xFF7FCB9C)
+val PactioGreenSoftDark = Color(0xFF1E4030)
+
+val PactioRedOnDark = Color(0xFFF0897C)
+val PactioRedSoftDark = Color(0xFF4A251F)
+
+val PactioSwitchTrackOffDark = Color(0xFF574A3D)

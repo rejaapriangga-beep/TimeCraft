@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_settings">Settings</string>
+    <string name="action_logout">Log out</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="parent_password_label">Parent password</string>
+    <string name="parent_password_dialog_body">Ask a parent to enter their account password to log out of this phone.</string>
+    <string name="cd_toggle_dark_mode">Toggle dark/light mode</string>
+
+    <string name="greeting_headline">Hi there!\nReady for today\'s tasks?</string>
+    <string name="child_login_subtitle">Sign in with your family code and PIN.</string>
+    <string name="label_family_code">Family Code</string>
+    <string name="label_pin">PIN</string>
+    <string name="action_child_login">Sign In &amp; See Tasks</string>
+    <string name="link_parent_access">Parent? Sign in or register here →</string>
+    <string name="option_login_parent_title">Sign In as Parent</string>
+    <string name="option_register_title">Register a New Family</string>
+    <string name="link_switch_to_register">Don\'t have an account? Register a New Family</string>
+    <string name="label_family_name">Family name</string>
+    <string name="label_parent_name">Parent\'s name</string>
+    <string name="label_email">Email</string>
+    <string name="label_password_min8">Password (at least 8 characters)</string>
+    <string name="action_register_family">Register Family</string>
+    <string name="label_password">Password</string>
+    <string name="action_login">Sign In</string>
+
+    <!-- Components.kt -->
+    <string name="cd_hide_password">Hide</string>
+    <string name="cd_show_password">Show</string>
+    <string name="action_close">Close</string>
+
+    <!-- Models.kt: statusLabel() -->
+    <string name="status_assigned">Not submitted yet</string>
+    <string name="status_submitted">Awaiting approval</string>
+    <string name="status_approved">Approved</string>
+    <string name="status_rejected">Rejected</string>
+
+    <!-- Models.kt: activityActionLabel() -->
+    <string name="activity_login">Signed in</string>
+    <string name="activity_child_added">Added a child profile</string>
+    <string name="activity_child_removed">Removed a child profile</string>
+    <string name="activity_child_pin_reset">Reset a child\'s PIN</string>
+    <string name="activity_device_locked">Locked child\'s device</string>
+    <string name="activity_device_unlocked">Unlocked child\'s device</string>
+    <string name="activity_task_created">Created a new task</string>
+    <string name="activity_task_submitted">Submitted task evidence</string>
+    <string name="activity_task_approved">Approved a task</string>
+    <string name="activity_task_rejected">Rejected a task</string>
+    <string name="activity_access_redeemed">Redeemed minutes for screen time</string>
+    <string name="activity_backup_created">Downloaded an encrypted backup</string>
+    <string name="activity_password_changed">Changed password</string>
+    <string name="role_parent_suffix">" (Parent) "</string>
+    <string name="role_child_suffix">" (Child) "</string>
+
+    <!-- ParentScreen.kt: tab -->
+    <string name="tab_dashboard">Dashboard</string>
+    <string name="tab_tasks">Tasks</string>
+    <string name="tab_approval">Approvals</string>
+    <string name="tab_chat">Chat</string>
+    <string name="tab_lock">Lock</string>
+
+    <!-- ParentScreen.kt: ParentSettingsDialog -->
+    <string name="heading_child_profiles">Child Profiles</string>
+    <string name="desc_child_pin_encrypted">A child\'s PIN is stored encrypted and can\'t be shown again. If your child forgets their PIN, use Reset PIN.</string>
+    <string name="empty_no_children">No child profiles yet.</string>
+    <string name="cd_reset_pin_for">Reset PIN for %1$s</string>
+    <string name="cd_delete_for">Delete %1$s</string>
+    <string name="hint_add_child_moved">Adding a new child profile is now under the Device Lock tab.</string>
+    <string name="heading_activity_log">Activity Log</string>
+    <string name="empty_no_activity">No activity recorded yet.</string>
+    <string name="title_delete_child_confirm">Delete %1$s\'s profile?</string>
+    <string name="body_delete_child_confirm">All of their tasks, chat history, and evidence photos will be deleted too, and this child\'s device will be signed out automatically. This can\'t be undone.</string>
+    <string name="action_delete">Delete</string>
+    <string name="heading_uninstall_protection">Uninstall Protection</string>
+    <string name="desc_uninstall_protection">Once enabled, this app can\'t be uninstalled directly from the phone - it must first be turned off via system Settings &gt; Security &gt; Device admin apps, not the regular "Uninstall" button. It can still be turned off any time by anyone with access to system Settings.</string>
+    <string name="status_uninstall_protection_active">✓ Active</string>
+    <string name="status_uninstall_protection_inactive">Not active</string>
+    <string name="action_enable_uninstall_protection">Enable Uninstall Protection</string>
+    <string name="hint_disable_uninstall_protection">To turn off: phone system Settings &gt; Security &gt; Device admin apps &gt; TimeCraft &gt; Deactivate.</string>
+    <string name="desc_device_admin_explanation">TimeCraft uses this permission ONLY so the app can\'t be uninstalled directly from your child\'s phone - not to lock the screen, erase data, or any other device control.</string>
+    <string name="warning_device_admin_disable">Turning this off will allow TimeCraft to be uninstalled directly from the phone. Make sure this is really a parent\'s decision.</string>
+    <string name="heading_danger_zone">Danger Zone</string>
+    <string name="desc_delete_account">Deleting this account permanently removes the ENTIRE family: the parent account, every child profile, tasks, chat history, and activity log. This can\'t be undone.</string>
+    <string name="action_delete_account">Delete Account</string>
+    <string name="title_delete_account_confirm">Permanently delete this account?</string>
+    <string name="body_delete_account_confirm">All of this family\'s data (parent account, child profiles, tasks, evidence photos, and chat history) will be permanently deleted from the server and can\'t be recovered. Enter your password to confirm.</string>
+    <string name="info_account_deleted">Your account and all family data have been permanently deleted.</string>
+    <string name="heading_account">Account</string>
+    <string name="action_change_password">Change Password</string>
+    <string name="title_change_password">Change Password</string>
+    <string name="label_current_password">Current password</string>
+    <string name="label_new_password">New password</string>
+    <string name="info_password_changed">Password changed successfully. Other signed-in devices have been signed out automatically.</string>
+
+    <!-- TutorialOverlay.kt: parent Dashboard coach-mark tour, shown automatically once the first
+         time a parent sees the Dashboard, replayable from Settings. -->
+    <string name="tutorial_step_counter">Step %1$d of %2$d</string>
+    <string name="action_skip_tutorial">Skip</string>
+    <string name="action_next_tutorial">Next</string>
+    <string name="action_finish_tutorial">Done</string>
+    <string name="action_replay_tutorial">Show Tutorial Again</string>
+    <string name="tutorial_step_family_code">This is your family code. Enter it on your child\'s phone the first time they log in as a child, so their account connects to this family.</string>
+    <string name="tutorial_step_tab_dashboard">Dashboard tab - a quick family overview: family code, stats, and unfinished tasks.</string>
+    <string name="tutorial_step_tab_tasks">Tasks tab - see the full task list and create new tasks from here.</string>
+    <string name="tutorial_step_tab_approval">Approval tab - approve or reject tasks your child submitted, with their evidence.</string>
+    <string name="tutorial_step_tab_chat">Chat tab - send messages/photos to all children at once, or privately to one child.</string>
+    <string name="tutorial_step_tab_lock">Device Lock tab - lock/unlock your child\'s phone, and add new child profiles here.</string>
+    <string name="tutorial_step_incomplete_tasks">Track each child\'s unfinished tasks in this card, right from the Dashboard.</string>
+    <string name="tutorial_step_create_task">Tap this button to create a new task for a child.</string>
+    <string name="tutorial_step_topbar_language">Switch the app language between Bahasa Indonesia and English.</string>
+    <string name="tutorial_step_topbar_theme">Toggle light/dark mode any time.</string>
+    <string name="tutorial_step_topbar_backup">Create an encrypted family data backup, saved right to your phone.</string>
+    <string name="tutorial_step_topbar_settings">Open Settings - change your password, delete a child profile, view the activity log, enable uninstall protection, and open the full Usage Guide.</string>
+
+    <!-- GuideDialog.kt: Usage Guide - full text reference, different from the coach-mark tour
+         above (which only highlights 4 Dashboard elements). Opened from Settings. -->
+    <string name="action_open_guide">Usage Guide</string>
+
+    <string name="guide_title_add_child">Add a Child Profile</string>
+    <string name="guide_steps_add_child">Open the \"Device Lock\" tab (the lock icon in the bottom menu).\nTap the \"+ Add Child\" button.\nEnter the child\'s name and a 4-8 digit PIN, then save.\nThe family code automatically appears on the Dashboard card - the child uses it to log in for the first time.</string>
+
+    <string name="guide_title_create_task">Create a New Task</string>
+    <string name="guide_steps_create_task">From the Dashboard, tap the \"+\" button in the bottom-right corner (or open the \"Tasks\" tab and tap \"Add Task\").\nSelect the child the task is for.\nEnter a title, description (optional), and reward minutes.\nTap save - the task appears on the child\'s phone right away.</string>
+
+    <string name="guide_title_approval">Approve or Reject Tasks</string>
+    <string name="guide_steps_approval">Open the \"Approval\" tab - the number badge shows how many tasks are pending.\nTap a task to see its details and the evidence your child submitted.\nTap \"Approve\" or \"Reject\", optionally adding a note.\nOnce approved, the reward minutes are added to the child\'s access balance automatically.</string>
+
+    <string name="guide_title_chat">Chat with Your Child</string>
+    <string name="guide_steps_chat">Open the \"Chat\" tab.\nChoose \"All Children\" for the family group chat, or a specific child\'s name for a private chat.\nType a message or tap the camera/gallery icon to send a photo, then tap send.\nLong-press a message to react with an emoji or reply to it.</string>
+
+    <string name="guide_title_lock">Lock Your Child\'s Device</string>
+    <string name="guide_steps_lock">Open the \"Device Lock\" tab.\nTurn on the toggle next to the child\'s name you want to lock.\nThe child\'s device immediately shows the TimeCraft lock screen until turned off again.\nMake sure the \"Display over other apps\" permission was enabled on your child\'s phone when the app was first installed, so this feature can work.</string>
+
+    <string name="guide_title_backup">Create a Data Backup</string>
+    <string name="guide_steps_backup">Tap the cloud (download) icon in the top-right corner.\nSet a backup password (at least 8 characters) and repeat it to confirm.\nAn encrypted JSON file is saved to the location you choose on your phone.\nKeep this password safe - without it, the backup file can\'t be opened again (the server never stores it).</string>
+
+    <string name="guide_title_change_password">Change Your Password</string>
+    <string name="guide_steps_change_password">Tap the gear (Settings) icon in the top-right corner.\nUnder \"Account\", tap \"Change Password\".\nEnter your current password, then a new one (at least 8 characters).\nOther devices still signed in with the old password are signed out automatically - this device stays signed in.</string>
+
+    <string name="guide_title_delete_child">Delete a Child Profile</string>
+    <string name="guide_steps_delete_child">Tap the gear (Settings) icon.\nFind the child\'s name in the \"Child Profiles\" list.\nTap the red trash icon next to it, then confirm.\nAll of that child\'s tasks, chat history, and evidence photos are permanently deleted too - this can\'t be undone.</string>
+
+    <string name="guide_title_activity_log">View the Activity Log</string>
+    <string name="guide_steps_activity_log">Tap the gear (Settings) icon.\nScroll down to the \"Activity Log\" section.\nSee this family\'s history of actions (logins, device lock/unlock, tasks created/approved, etc.) with timestamps.\nOnly parents can see this log - it\'s transparent, not hidden monitoring of your child.</string>
+
+    <string name="guide_title_theme">Switch Light/Dark Mode</string>
+    <string name="guide_steps_theme">Tap the moon/sun icon in the top-right corner.\nThe app instantly switches between light and dark mode.\nYour choice is remembered automatically for next time.</string>
+
+    <string name="guide_title_language">Change the App Language</string>
+    <string name="guide_steps_language">Tap the \"文A\" (Translate) icon in the top-right corner.\nChoose \"Bahasa Indonesia\" or \"English\".\nThe app briefly reloads with the newly chosen language.</string>
+
+    <!-- ParentScreen.kt: Backup -->
+    <string name="heading_backup_data">Backup Data</string>
+    <string name="desc_backup">Download a copy of your family data (child profiles, tasks, chat history) as an encrypted file to your phone\'s storage. You choose the password yourself - the server does NOT store it.</string>
+    <string name="action_download_backup_encrypted">Download Encrypted Backup</string>
+    <string name="toast_backup_saved">Encrypted backup saved successfully. Keep the password safe - the server does NOT store it.</string>
+    <string name="toast_backup_save_failed">Failed to save the backup file.</string>
+    <string name="error_backup_create_failed">Failed to create backup.</string>
+    <string name="desc_backup_password">Create a backup password (at least 8 characters). You MUST remember this password yourself - you\'ll need it again to open this file, the server does not store it at all.</string>
+    <string name="label_backup_password">Backup password</string>
+    <string name="label_repeat_password">Repeat password</string>
+    <string name="error_password_mismatch">Passwords don\'t match.</string>
+    <string name="action_download_backup_short">Download Backup</string>
+
+    <!-- ParentScreen.kt: Reset PIN -->
+    <string name="body_reset_pin">The old PIN stops working as soon as the new one is saved. Tell %1$s the new PIN directly.</string>
+    <string name="label_new_pin">New PIN (4-8 digits)</string>
+    <string name="action_save_new_pin">Save New PIN</string>
+
+    <!-- ParentScreen.kt: Dashboard -->
+    <string name="label_family_fallback">Family</string>
+    <string name="hint_no_children_add">No child profiles yet. Add one from the Settings gear icon at the top right.</string>
+    <string name="stat_pending_approval">Pending Approval</string>
+    <string name="stat_children">Children</string>
+    <string name="stat_locked">Locked</string>
+    <string name="stat_total_tasks">Total Tasks</string>
+    <string name="action_create_task">Create Task</string>
+    <string name="empty_no_pending_approval">No tasks awaiting approval.</string>
+    <string name="count_pending_tasks">%1$d pending task(s)</string>
+    <string name="title_locked_devices">Locked Devices</string>
+    <string name="empty_no_locked_devices">No devices are currently locked.</string>
+    <string name="action_unlock">Unlock</string>
+    <string name="title_all_tasks">All Tasks</string>
+    <string name="empty_no_tasks">No tasks yet.</string>
+    <string name="heading_incomplete_tasks">Incomplete Tasks</string>
+    <string name="count_pending_short">%1$d pending</string>
+    <string name="empty_all_tasks_done">All tasks are done.</string>
+    <string name="heading_last_group_chat">Latest Group Chat</string>
+    <string name="empty_no_group_chat">No messages in the family group yet.</string>
+    <string name="label_you">You</string>
+    <string name="label_parent_role">Parent</string>
+    <string name="label_photo_preview">📷 Photo</string>
+    <string name="empty_no_filtered_tasks">No tasks match this filter.</string>
+    <string name="empty_no_submitted_tasks">No tasks submitted by children yet.</string>
+    <string name="label_all_children">All Children</string>
+    <string name="empty_no_children_for_chat">No child profiles to chat with yet.</string>
+    <string name="label_none_locked">Nothing is locked</string>
+    <string name="count_locked_of_total">%1$d of %2$d children locked</string>
+    <string name="label_child_singular">Child</string>
+    <string name="label_device_of_child">%1$s\'s Device</string>
+
+    <!-- ParentScreen.kt: Kunci, WaitingTaskCard, dokumen bukti -->
+    <string name="action_add_child">+ Add Child</string>
+    <string name="label_child_colon">Child: %1$s</string>
+    <string name="label_reward_minutes">Reward: %1$d minutes of access</string>
+    <string name="label_evidence_colon">Evidence: %1$s</string>
+    <string name="action_approve">Approve</string>
+    <string name="action_reject">Reject</string>
+    <string name="cd_task_evidence_photo">Task evidence photo</string>
+    <string name="cd_task_evidence_document">Task evidence document</string>
+    <string name="cd_failed_to_load">Failed to load</string>
+    <string name="cd_evidence_preview">Evidence photo preview</string>
+    <string name="error_no_app_for_file">No app on this phone can open this type of file.</string>
+    <string name="title_reject_task">Reject \"%1$s\"?</string>
+    <string name="desc_reject_task">Your child will see that this task needs to be redone. Give a reason (optional).</string>
+    <string name="label_note_for_child">Note for your child</string>
+    <string name="action_reject_task">Reject Task</string>
+    <string name="count_minutes_short">%1$d min</string>
+    <string name="label_evidence_text_colon">Evidence (text): %1$s</string>
+    <string name="label_evidence_files_colon">Evidence files:</string>
+    <string name="label_parent_note_colon">Parent\'s note: %1$s</string>
+    <string name="label_status">Status</string>
+    <string name="label_all_statuses">All Statuses</string>
+    <string name="title_add_child_profile">Add child profile</string>
+    <string name="label_child_name">Child\'s name</string>
+    <string name="label_pin_4to8">PIN (4-8 digits)</string>
+    <string name="action_save">Save</string>
+    <string name="title_create_task">Create new task</string>
+    <string name="label_task_title">Task title</string>
+    <string name="label_description_optional">Description (optional)</string>
+    <string name="label_reward_minutes_field">Reward (minutes, 1-240)</string>
+
+    <!-- ChildScreen.kt -->
+    <string name="stat_not_submitted">Not Submitted</string>
+    <string name="empty_all_tasks_done_child">All tasks are done. Nice work!</string>
+    <string name="empty_no_tasks_from_parent">No tasks from your parent yet.</string>
+    <string name="label_family_all">Family (All)</string>
+    <string name="label_private_with_parent">Private with Parent</string>
+    <string name="heading_device_lock">Device Lock</string>
+    <string name="label_permission_granted">Permission granted</string>
+    <string name="label_permission_not_granted">Permission not granted yet</string>
+    <string name="desc_lock_permission_granted">A parent can lock access to other apps when needed. You can revoke this permission any time from your phone\'s Settings.</string>
+    <string name="desc_lock_permission_not_granted">So a parent can lock access to other apps when needed, allow the following access from your phone\'s Settings. It can be revoked any time.</string>
+    <string name="action_allow_overlay">Allow Display Over Other Apps</string>
+    <string name="desc_lock_child_note">Locking/unlocking the device can only be set by a parent. You can still use your reward minutes to unlock access temporarily from the Dashboard tab.</string>
+    <string name="label_name">Name</string>
+    <string name="desc_logout_hint">To sign out of this account, use the \"Log out\" button at the top right.</string>
+    <string name="heading_access_balance">Reward Access Balance</string>
+    <string name="label_from_approved_tasks">from %1$d approved task(s)</string>
+    <string name="label_access_active_remaining">Access active · %1$s left</string>
+    <string name="action_add_time">Add Time</string>
+    <string name="action_use_time">Use Time</string>
+    <string name="desc_redeem_balance">Your balance is %1$d minutes. How many minutes do you want to use now? The rest stays saved.</string>
+    <string name="label_minutes">Minutes</string>
+    <string name="action_use">Use</string>
+    <string name="action_submit_as_done">Submit as done</string>
+    <string name="error_unsupported_file_type">Unsupported file type (must be JPEG, PNG, PDF, Word, Excel, PowerPoint, or TXT).</string>
+    <string name="error_file_unreadable">The file couldn\'t be read.</string>
+    <string name="error_file_too_large">File too large (5MB max per file).</string>
+    <string name="label_file_fallback">File</string>
+    <string name="title_submit_task">Submit \"%1$s\" as done</string>
+    <string name="desc_submit_evidence">Tell us what you did, and attach a photo/document as evidence (optional, up to %1$d files).</string>
+    <string name="label_evidence_text">Evidence (text)</string>
+    <string name="error_max_evidence_files">%1$d evidence files max.</string>
+    <string name="hint_max_evidence_reached">%1$d file limit reached.</string>
+    <string name="action_take_photo">Take Photo</string>
+    <string name="action_pick_file">Pick File</string>
+    <string name="action_send">Send</string>
+    <string name="cd_remove_attachment">Remove attachment</string>
+    <string name="label_photo_camera">Photo</string>
+
+    <!-- ChatScreen.kt -->
+    <string name="error_send_photo_failed">Failed to send photo.</string>
+    <string name="error_read_photo_failed">Failed to read the selected photo.</string>
+    <string name="error_react_failed">Failed to add reaction.</string>
+    <string name="error_send_message_failed">Failed to send message.</string>
+    <string name="empty_no_chat_messages">No messages yet. Send the first one!</string>
+    <string name="label_replying_to">Replying to %1$s: %2$s</string>
+    <string name="cd_cancel_reply">Cancel reply</string>
+    <string name="cd_send_photo_camera">Send photo from camera</string>
+    <string name="cd_send_photo_gallery">Send photo from gallery</string>
+    <string name="placeholder_write_message">Write a message…</string>
+    <string name="action_reply_short">↩ Reply</string>
+    <string name="action_react_short">🙂 React</string>
+    <string name="cd_chat_photo">Chat photo</string>
+    <string name="label_photo_unavailable">Photo unavailable</string>
+    <string name="cd_chat_photo_preview">Chat photo preview</string>
+
+    <!-- DeviceLockService.kt (not Compose - used via Context.getString()) -->
+    <string name="title_device_locked">Device Locked</string>
+    <string name="body_device_locked_message">A parent has enabled lock mode. Open TimeCraft to see your tasks and reward balance.</string>
+    <string name="action_open_timecraft">Open TimeCraft</string>
+    <string name="channel_device_control">Device Control</string>
+    <string name="notif_title_device_control_active">TimeCraft - Device Control active</string>
+    <string name="notif_text_monitoring_lock">Monitoring lock status from a parent.</string>
+
+    <!-- AppViewModel.kt (not Compose - used via getApplication<Application>().getString()) -->
+    <string name="error_session_expired">Session expired, please sign in again.</string>
+    <string name="error_wrong_parent_password">Wrong parent password.</string>
+    <string name="error_no_connection">Can\'t reach the server. Check your internet connection.</string>
+    <string name="info_child_added">Child profile added successfully.</string>
+    <string name="info_child_deleted">Child profile deleted.</string>
+    <string name="info_pin_reset">Child\'s PIN reset successfully.</string>
+    <string name="info_task_created">Task created successfully.</string>
+    <string name="info_task_submitted">Task submitted, awaiting parent approval.</string>
+    <string name="info_task_approved">Task approved.</string>
+    <string name="info_task_rejected">Task rejected.</string>
+    <string name="info_access_unlocked">Access unlocked for %1$d minutes.</string>
+    <string name="info_device_locked">Child\'s device locked.</string>
+    <string name="info_device_unlocked">Device lock removed.</string>
+    <string name="error_generic">Something went wrong.</string>
+</resources>
