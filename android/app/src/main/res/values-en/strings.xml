@@ -282,9 +282,17 @@
     <string name="placeholder_write_message">Write a message…</string>
     <string name="action_reply_short">↩ Reply</string>
     <string name="action_react_short">🙂 React</string>
+    <string name="action_report_short">⚠ Report</string>
     <string name="cd_chat_photo">Chat photo</string>
     <string name="label_photo_unavailable">Photo unavailable</string>
     <string name="cd_chat_photo_preview">Chat photo preview</string>
+    <string name="title_report_message">Report Message</string>
+    <string name="desc_report_message">This report is sent to the app operator for review, not to the sender. Explain why this message is a problem.</string>
+    <string name="label_report_reason">Report reason</string>
+    <string name="error_report_reason_required">A report reason is required.</string>
+    <string name="error_report_failed">Failed to send report. Try again later.</string>
+    <string name="success_report_sent">Report sent. Thanks for helping keep this app safe.</string>
+    <string name="action_send_report">Send Report</string>
 
     <!-- DeviceLockService.kt (not Compose - used via Context.getString()) -->
     <string name="title_device_locked">Device Locked</string>

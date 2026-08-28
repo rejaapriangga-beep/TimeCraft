@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -114,6 +115,14 @@ fun ChatScreen(state: UiState, childId: String, onRefreshUnread: () -> Unit) {
     var replyTarget by remember(childId) { mutableStateOf<ChatMessageDto?>(null) }
     // Id pesan yang popover pilihan emoji reaksinya sedang terbuka - satu popover aktif dalam satu waktu.
     var reactionPickerMessageId by remember(childId) { mutableStateOf<String?>(null) }
+    // Pesan yang sedang diproses lewat dialog "Laporkan" - null kalau dialog tertutup. Terpisah
+    // dari replyTarget/reactionPickerMessageId karena aksinya beda (kirim ke operator, bukan ke
+    // thread chat) dan butuh input alasan sebelum benar-benar terkirim.
+    var reportTarget by remember(childId) { mutableStateOf<ChatMessageDto?>(null) }
+    var reportSending by remember(childId) { mutableStateOf(false) }
+    // Pesan status non-error (mis. konfirmasi laporan terkirim) - dipisah dari sendError supaya
+    // tidak tertimpa warna merah, otomatis hilang sendiri setelah beberapa detik di bawah.
+    var reportFeedback by remember(childId) { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
 
     // Disiapkan di sini (konteks composable) untuk dipakai di dalam sendPhoto (suspend fun biasa,
@@ -124,6 +133,8 @@ fun ChatScreen(state: UiState, childId: String, onRefreshUnread: () -> Unit) {
     val errorPhotoTooLarge = stringResource(R.string.error_file_too_large)
     val errorReactFailed = stringResource(R.string.error_react_failed)
     val errorSendMessageFailed = stringResource(R.string.error_send_message_failed)
+    val errorReportFailed = stringResource(R.string.error_report_failed)
+    val successReportSent = stringResource(R.string.success_report_sent)
 
     // bytes dikirim APA ADANYA (tanpa decode-ulang ke Bitmap lalu dikompres lagi) supaya resolusi
     // & kualitas foto asli (dari kamera maupun galeri) tidak berkurang.
@@ -137,7 +148,7 @@ fun ChatScreen(state: UiState, childId: String, onRefreshUnread: () -> Unit) {
                 sendError = null
                 replyTarget = null
             }
-            .onFailure { sendError = errorSendPhotoFailed }
+            .onFailure { error -> sendError = error.message ?: errorSendPhotoFailed }
         sending = false
     }
 
@@ -200,6 +211,13 @@ fun ChatScreen(state: UiState, childId: String, onRefreshUnread: () -> Unit) {
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
     }
 
+    LaunchedEffect(reportFeedback) {
+        if (reportFeedback != null) {
+            delay(3000)
+            reportFeedback = null
+        }
+    }
+
     Column(Modifier.fillMaxSize()) {
         if (messages.isEmpty()) {
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -233,6 +251,7 @@ fun ChatScreen(state: UiState, childId: String, onRefreshUnread: () -> Unit) {
                         token = token,
                         childId = childId,
                         onReplyRequested = { replyTarget = message },
+                        onReportRequested = { reportTarget = message },
                         onToggleReactionPicker = {
                             reactionPickerMessageId = if (reactionPickerMessageId == message.id) null else message.id
                         },
@@ -253,6 +272,14 @@ fun ChatScreen(state: UiState, childId: String, onRefreshUnread: () -> Unit) {
             Text(
                 it,
                 color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+            )
+        }
+        reportFeedback?.let {
+            Text(
+                it,
+                color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
             )
@@ -322,7 +349,7 @@ fun ChatScreen(state: UiState, childId: String, onRefreshUnread: () -> Unit) {
                     scope.launch {
                         runCatching { PactioApi.sendChatText(token, childId, text, replyToId) }
                             .onSuccess { sent -> messages = messages + sent; sendError = null; replyTarget = null }
-                            .onFailure { sendError = errorSendMessageFailed }
+                            .onFailure { error -> sendError = error.message ?: errorSendMessageFailed }
                         sending = false
                     }
                 },
@@ -331,6 +358,25 @@ fun ChatScreen(state: UiState, childId: String, onRefreshUnread: () -> Unit) {
                 Icon(Icons.Default.Send, contentDescription = stringResource(R.string.action_send))
             }
         }
+    }
+
+    reportTarget?.let { target ->
+        ReportMessageDialog(
+            sending = reportSending,
+            onDismiss = { reportTarget = null },
+            onSubmit = { reason ->
+                reportSending = true
+                scope.launch {
+                    runCatching { PactioApi.reportMessage(token, childId, target.id, reason) }
+                        .onSuccess {
+                            reportTarget = null
+                            reportFeedback = successReportSent
+                        }
+                        .onFailure { error -> sendError = error.message ?: errorReportFailed }
+                    reportSending = false
+                }
+            }
+        )
     }
 }
 
@@ -359,6 +405,7 @@ private fun ChatBubble(
     token: String,
     childId: String,
     onReplyRequested: () -> Unit,
+    onReportRequested: () -> Unit,
     onToggleReactionPicker: () -> Unit,
     onReact: (String) -> Unit
 ) {
@@ -433,6 +480,9 @@ private fun ChatBubble(
                 }
                 TextButton(onClick = onToggleReactionPicker, contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)) {
                     Text(stringResource(R.string.action_react_short), style = MaterialTheme.typography.labelSmall, color = onBubbleColor.copy(alpha = 0.85f))
+                }
+                TextButton(onClick = onReportRequested, contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)) {
+                    Text(stringResource(R.string.action_report_short), style = MaterialTheme.typography.labelSmall, color = onBubbleColor.copy(alpha = 0.85f))
                 }
             }
 
@@ -540,6 +590,49 @@ private fun ChatImagePreviewDialog(bitmap: Bitmap, onDismiss: () -> Unit) {
             )
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) } }
+    )
+}
+
+/**
+ * Dialog "Laporkan Pesan" - laporan dikirim ke operator aplikasi lewat POST /report (lihat
+ * PactioApi.reportMessage & server.js), BUKAN ke pengirim pesan/thread chat. Alasan wajib diisi
+ * supaya laporan berguna saat ditinjau manual (lihat REPORTS_LOG_FILE di server.js).
+ */
+@Composable
+private fun ReportMessageDialog(sending: Boolean, onDismiss: () -> Unit, onSubmit: (reason: String) -> Unit) {
+    var reason by remember { mutableStateOf("") }
+    val errorReasonRequired = stringResource(R.string.error_report_reason_required)
+    var validationError by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.title_report_message)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.desc_report_message), style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = reason,
+                    onValueChange = { reason = it; validationError = null },
+                    label = { Text(stringResource(R.string.label_report_reason)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                validationError?.let {
+                    Spacer(Modifier.height(4.dp))
+                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val trimmed = reason.trim()
+                    if (trimmed.isEmpty()) validationError = errorReasonRequired else onSubmit(trimmed)
+                },
+                enabled = !sending
+            ) { Text(stringResource(R.string.action_send_report)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !sending) { Text(stringResource(R.string.action_cancel)) } }
     )
 }
 

@@ -34,6 +34,50 @@ fs.mkdirSync(CHAT_RELAY_DIR, { recursive: true });
 const CHAT_PHOTO_RETENTION_MS = 48 * 60 * 60 * 1000; // 48 jam
 const MAX_CHAT_TEXT_LENGTH = 2000;
 
+// --- Filter otomatis pesan chat (deteksi kasar transaksi ilegal/konten terlarang) -------
+// LAPISAN PERTAMA saja, BUKAN solusi lengkap - daftar kata kunci sederhana ini pasti bisa
+// lolos dengan penulisan yang disamarkan (mis. "s4bu", spasi aneh) dan berpotensi salah
+// tangkap kalimat wajar yang kebetulan memuat kata yang sama (mis. edukasi bahaya narkoba
+// dari orang tua ke anak) - sengaja pakai istilah yang cukup spesifik (bukan kata umum) untuk
+// menekan itu. Tujuannya menaikkan biaya penyalahgunaan chat keluarga ini sebagai kanal
+// transaksi narkoba/senjata/judi online/prostitusi - BUKAN pengganti moderasi konten foto atau
+// tinjauan manusia. Pesan yang cocok DITOLAK (tidak pernah disimpan/terkirim ke penerima) &
+// dicatat ke MODERATION_LOG_FILE supaya operator bisa meninjau pola penyalahgunaan.
+const MODERATION_LOG_FILE = path.join(path.dirname(DATA_FILE), "moderation.log");
+const BLOCKED_MESSAGE_PATTERNS = [
+  // Narkoba/obat terlarang - nama zat spesifik, jarang muncul wajar dalam obrolan orang tua-anak
+  /\bsabu(-?sabu)?\b/i, /\bganja\b/i, /\bkokain\b/i, /\bheroin\b/i, /\bputa?w\b/i, /\bekstasi\b/i,
+  /\bpil\s*koplo\b/i, /\bdouble\s*l\b/i,
+  // Judi online - istilah yang hampir selalu terkait promosi/ajakan judi
+  /\bjudi\s*online\b/i, /\bslot\s*gacor\b/i, /\bsitus\s*judi\b/i, /\btogel\b/i,
+  // Senjata ilegal
+  /\bjual\s*(senjata|pistol|airsoft)\b/i,
+  // Prostitusi/konten seksual komersial
+  /\bopen\s*bo\b/i, /\bjasa\s*\+?\s*18\b/i, /\bbooking\s*(cewek|abg)\b/i
+];
+
+function findBlockedMessagePattern(text) {
+  return BLOCKED_MESSAGE_PATTERNS.find((pattern) => pattern.test(text)) || null;
+}
+
+/** Ditulis sebagai JSON Lines (satu event per baris) - sengaja berkas log biasa (bukan data.json) supaya gampang di-tail/grep operator tanpa perlu endpoint/dashboard admin terpisah. Dipakai baik untuk pesan yang otomatis diblokir (MODERATION_LOG_FILE) maupun laporan manual dari pengguna (REPORTS_LOG_FILE, lihat POST /report). */
+function appendJsonLog(filePath, event) {
+  try {
+    fs.appendFileSync(filePath, JSON.stringify({ ...event, at: new Date().toISOString() }) + "\n");
+  } catch (error) {
+    console.error(`Gagal menulis log (${filePath}):`, error);
+  }
+}
+function logModerationEvent(event) {
+  appendJsonLog(MODERATION_LOG_FILE, event);
+}
+
+// Jalur lapor penyalahgunaan (POST /report, lihat routing di bawah) - orang tua atau anak bisa
+// melaporkan pesan chat tertentu atau laporan umum ke operator aplikasi. Dicatat ke berkas log
+// ini untuk ditinjau manual - lihat catatan appendJsonLog soal kenapa bukan sistem tiket penuh.
+const REPORTS_LOG_FILE = path.join(path.dirname(DATA_FILE), "reports.log");
+const MAX_REPORT_REASON_LENGTH = 1000;
+
 // --- Enkripsi teks chat saat disimpan (at-rest) -----------------------------------------
 // Isi pesan teks dienkripsi AES-256-GCM sebelum ditulis ke data.json, dengan kunci yang
 // TIDAK PERNAH ikut tersimpan di data.json itu sendiri - disimpan terpisah di berkas
@@ -614,6 +658,9 @@ async function route(req, res) {
   // Halaman publik "cara minta hapus akun/data" - wajib punya URL publik untuk submit ke Google
   // Play Console (bagian "Data safety" -> "Delete account URL"), sama polanya dengan /privacy.
   if (req.method === "GET" && pathname === "/delete-account") { if (serveStatic(res, "delete-account.html")) return; }
+  // Kebijakan Penggunaan (Acceptable Use Policy) - larangan pakai chat/fitur keluarga untuk
+  // aktivitas ilegal & jalur lapor penyalahgunaan, sama polanya dengan /privacy.
+  if (req.method === "GET" && pathname === "/terms") { if (serveStatic(res, "terms.html")) return; }
 
   if (req.method === "GET" && pathname === "/health") return send(res, 200, { ok: true });
 
@@ -1074,6 +1121,16 @@ async function route(req, res) {
     if (type === "text") {
       const plainText = requireText(body.text, "Pesan");
       if (plainText.length > MAX_CHAT_TEXT_LENGTH) return send(res, 400, { error: `Pesan maksimal ${MAX_CHAT_TEXT_LENGTH} karakter.` });
+      const blockedPattern = findBlockedMessagePattern(plainText);
+      if (blockedPattern) {
+        logModerationEvent({
+          type: "chat_text_blocked", userId: user.id, role: user.role, familyId: user.familyId,
+          threadKey: storageKey, pattern: blockedPattern.source
+        });
+        return send(res, 400, {
+          error: "Pesan tidak bisa dikirim karena terdeteksi memuat konten yang dilarang (lihat Kebijakan Penggunaan)."
+        });
+      }
       message.textEnc = encryptChatText(plainText);
     } else {
       let file;
@@ -1144,6 +1201,27 @@ async function route(req, res) {
     setChatReadCursor(user.id, internalThreadKey(user, threadKey), new Date().toISOString());
     save();
     return send(res, 200, { ok: true });
+  }
+
+  // Lapor penyalahgunaan - bisa menunjuk pesan chat tertentu (targetMessageId + threadKey,
+  // opsional) atau laporan umum tanpa target spesifik. Tidak ada validasi kepemilikan pesan di
+  // sini dengan sengaja - siapa pun di keluarga yang sama boleh melaporkan pesan APAPUN di thread
+  // yang bisa mereka akses, termasuk pesan orang lain, supaya anak juga bisa melaporkan pesan
+  // dari orang tua kalau perlu, bukan cuma sebaliknya.
+  if (req.method === "POST" && pathname === "/report") {
+    const user = auth(req, res); if (!user) return;
+    const body = await bodyOf(req);
+    const reason = requireText(body.reason, "Alasan laporan");
+    if (reason.length > MAX_REPORT_REASON_LENGTH) {
+      return send(res, 400, { error: `Alasan laporan maksimal ${MAX_REPORT_REASON_LENGTH} karakter.` });
+    }
+    const threadKey = typeof body.threadKey === "string" && body.threadKey ? body.threadKey : null;
+    const targetMessageId = typeof body.targetMessageId === "string" && body.targetMessageId ? body.targetMessageId : null;
+    appendJsonLog(REPORTS_LOG_FILE, {
+      type: "user_report", reporterId: user.id, reporterRole: user.role, familyId: user.familyId,
+      threadKey, targetMessageId, reason
+    });
+    return send(res, 201, { ok: true });
   }
 
   send(res, 404, { error: "Endpoint tidak ditemukan." });

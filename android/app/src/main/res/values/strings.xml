@@ -291,9 +291,17 @@
     <string name="placeholder_write_message">Tulis pesan…</string>
     <string name="action_reply_short">↩ Balas</string>
     <string name="action_react_short">🙂 Reaksi</string>
+    <string name="action_report_short">⚠ Laporkan</string>
     <string name="cd_chat_photo">Foto chat</string>
     <string name="label_photo_unavailable">Foto tidak tersedia</string>
     <string name="cd_chat_photo_preview">Pratinjau foto chat</string>
+    <string name="title_report_message">Laporkan Pesan</string>
+    <string name="desc_report_message">Laporan ini dikirim ke pengelola aplikasi untuk ditinjau, bukan ke pengirim pesan. Jelaskan kenapa pesan ini bermasalah.</string>
+    <string name="label_report_reason">Alasan laporan</string>
+    <string name="error_report_reason_required">Alasan laporan wajib diisi.</string>
+    <string name="error_report_failed">Gagal mengirim laporan. Coba lagi nanti.</string>
+    <string name="success_report_sent">Laporan terkirim. Terima kasih sudah membantu menjaga keamanan aplikasi ini.</string>
+    <string name="action_send_report">Kirim Laporan</string>
 
     <!-- DeviceLockService.kt (bukan Compose - dipakai via Context.getString()) -->
     <string name="title_device_locked">Perangkat Terkunci</string>

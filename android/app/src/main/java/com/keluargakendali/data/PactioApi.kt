@@ -164,6 +164,13 @@ object PactioApi {
         request("POST", "/chat/$childId/read", token = token, body = JSONObject())
     }
 
+    /** Lapor pesan chat tertentu (atau laporan umum kalau targetMessageId null) ke operator aplikasi - lihat POST /report di server.js & TERMS.html. */
+    suspend fun reportMessage(token: String, threadKey: String, targetMessageId: String?, reason: String) {
+        val body = JSONObject().put("reason", reason).put("threadKey", threadKey)
+        if (targetMessageId != null) body.put("targetMessageId", targetMessageId)
+        request("POST", "/report", token = token, body = body)
+    }
+
     /** Log aktivitas keluarga - HANYA bisa dipanggil orang tua (backend menolak anak). Terbaru dulu. */
     suspend fun getActivityLog(token: String): List<ActivityLogEntryDto> {
         val json = request("GET", "/activity-log", token = token, body = null)
