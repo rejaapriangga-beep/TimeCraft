@@ -3,7 +3,7 @@
 Aplikasi parental-control berbasis tugas. Orang tua membuat tugas → anak mengerjakan &
 mengirim bukti → orang tua menyetujui/menolak → anak memperoleh hadiah berupa menit akses.
 
-Aplikasi ini terhubung ke backend nyata di `https://api.patio.my.id`. Tidak ada lagi data
+Aplikasi ini terhubung ke backend nyata di `https://timecraft.my.id`. Tidak ada lagi data
 tugas yang disimulasikan secara lokal — semua data (keluarga, anak, tugas, saldo) berasal
 dari API.
 

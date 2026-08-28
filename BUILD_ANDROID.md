@@ -112,5 +112,5 @@ Perlu Android SDK command-line tools terpasang dan `ANDROID_HOME` diarahkan ke s
    crash.
 
 Kalau semua langkah di atas berhasil, alur inti **Task → Submission → Parent Approval →
-Reward Balance** sudah terbukti berjalan nyata lewat `https://api.patio.my.id`, sesuai
+Reward Balance** sudah terbukti berjalan nyata lewat `https://timecraft.my.id`, sesuai
 prioritas PRD sebelum kontrol perangkat mulai dirancang.
