@@ -3,12 +3,12 @@ package com.keluargakendali.ui
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -78,7 +78,7 @@ import com.keluargakendali.service.AppForegroundState
 import com.keluargakendali.service.DeviceLockPermissions
 import com.keluargakendali.service.DeviceLockService
 import kotlinx.coroutines.delay
-import java.io.ByteArrayOutputStream
+import java.io.File
 
 /** Jaring pengaman kalau kamera/pemilih berkas somehow tidak pernah kembali hasilnya - lihat AppForegroundState.suppressLockFor. */
 private const val PICKER_LOCK_SUPPRESSION_MS = 120_000L
@@ -87,7 +87,13 @@ private const val PICKER_LOCK_SUPPRESSION_MS = 120_000L
 private const val MAX_EVIDENCE_FILES = 5
 
 /** Sama dengan MAX_EVIDENCE_FILE_BYTES di backend. */
-private const val MAX_EVIDENCE_FILE_BYTES = 5 * 1024 * 1024
+private const val MAX_EVIDENCE_FILE_BYTES = 10 * 1024 * 1024
+
+/** Berkas sementara untuk hasil jepretan kamera resolusi asli - lihat createCaptureFile & takePicture di SubmitEvidenceDialog. Ditulis ke cache/evidence/, folder yang sama yang sudah diekspos lewat FileProvider (lihat file_paths.xml), dan dihapus lagi begitu byte-nya sudah dibaca. */
+private fun createCaptureFile(context: Context): File {
+    val dir = File(context.cacheDir, "evidence").apply { mkdirs() }
+    return File(dir, "capture_${System.currentTimeMillis()}.jpg")
+}
 
 @Composable
 fun ChildScreen(
@@ -545,7 +551,7 @@ private fun Uri.readAsAttachment(context: Context, onError: (String) -> Unit): P
     }
     val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
     val isImage = mime == "image/jpeg" || mime == "image/png"
-    val bitmap = if (isImage) BitmapFactory.decodeByteArray(bytes, 0, bytes.size) else null
+    val bitmap = if (isImage) decodeSampledBitmap(bytes, THUMBNAIL_DECODE_TARGET_PX) else null
     val label = queryDisplayName(context, this) ?: context.getString(R.string.label_file_fallback)
     return PendingAttachment(dataUri = "data:$mime;base64,$base64", previewBitmap = bitmap, label = label)
 }
@@ -570,13 +576,32 @@ private fun SubmitEvidenceDialog(
     // suppressLockFor/clearSuppression: kalau Mode Kunci aktif, tanpa ini overlay kunci akan
     // ikut menutupi aplikasi Kamera juga begitu ia tampil di depan (karena bukan Pactio) —
     // padahal ini delegasi resmi dari Pactio sendiri, bukan anak membuka aplikasi lain.
-    val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+    //
+    // TakePicture() (bukan TakePicturePreview()) dipakai supaya kamera menulis foto RESOLUSI ASLI
+    // ke berkas lewat FileProvider - TakePicturePreview() cuma mengirim bitmap preview kecil lewat
+    // Intent extra, jauh di bawah resolusi sensor kamera sebenarnya.
+    var pendingCaptureFile by remember { mutableStateOf<File?>(null) }
+    val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         AppForegroundState.clearSuppression()
-        if (bitmap != null && attachments.size < MAX_EVIDENCE_FILES) {
-            // Callback ActivityResultLauncher, bukan konteks @Composable - pakai context.getString().
-            attachments = attachments + PendingAttachment(bitmap.toJpegDataUri(), bitmap, context.getString(R.string.label_photo_camera))
-            pickError = null
+        val file = pendingCaptureFile
+        pendingCaptureFile = null
+        if (success && file != null && attachments.size < MAX_EVIDENCE_FILES) {
+            val bytes = runCatching { file.readBytes() }.getOrNull()
+            when {
+                bytes == null || bytes.isEmpty() -> Unit
+                bytes.size > MAX_EVIDENCE_FILE_BYTES -> pickError = context.getString(R.string.error_file_too_large)
+                else -> {
+                    val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                    val preview = decodeSampledBitmap(bytes, THUMBNAIL_DECODE_TARGET_PX)
+                    // Callback ActivityResultLauncher, bukan konteks @Composable - pakai context.getString().
+                    attachments = attachments + PendingAttachment(
+                        "data:image/jpeg;base64,$base64", preview, context.getString(R.string.label_photo_camera)
+                    )
+                    pickError = null
+                }
+            }
         }
+        file?.delete()
     }
 
     // Pemilih dokumen resmi Android (Storage Access Framework) — bisa pilih beberapa berkas
@@ -645,7 +670,10 @@ private fun SubmitEvidenceDialog(
                     OutlinedButton(
                         onClick = {
                             AppForegroundState.suppressLockFor(PICKER_LOCK_SUPPRESSION_MS)
-                            takePicture.launch(null)
+                            val file = createCaptureFile(context)
+                            pendingCaptureFile = file
+                            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                            takePicture.launch(uri)
                         },
                         enabled = !atLimit,
                         modifier = Modifier.weight(1f)
@@ -714,12 +742,4 @@ private fun AttachmentThumbnail(attachment: PendingAttachment, onRemove: () -> U
             )
         }
     }
-}
-
-/** Dikompresi jadi JPEG kualitas 80 supaya ukuran data URI tetap wajar untuk dikirim sebagai JSON. */
-private fun Bitmap.toJpegDataUri(): String {
-    val output = ByteArrayOutputStream()
-    compress(Bitmap.CompressFormat.JPEG, 80, output)
-    val base64 = Base64.encodeToString(output.toByteArray(), Base64.NO_WRAP)
-    return "data:image/jpeg;base64,$base64"
 }

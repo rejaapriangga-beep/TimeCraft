@@ -3,7 +3,6 @@ package com.keluargakendali.ui
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -1376,8 +1375,12 @@ private fun EvidenceFileThumbnail(token: String, taskId: String, file: EvidenceF
 
     val isImage = file.mime == "image/jpeg" || file.mime == "image/png"
     val currentBytes = bytes
-    val bitmap = remember(file.id, currentBytes) {
-        if (currentBytes != null && isImage) BitmapFactory.decodeByteArray(currentBytes, 0, currentBytes.size) else null
+    // Thumbnail kecil di-decode dengan downsampling (bukan resolusi penuh) - sejak batas ukuran
+    // dinaikkan ke 10MB untuk mempertahankan foto kamera resolusi asli, decode penuh di sini bisa
+    // memakan puluhan MB memori per thumbnail. Versi resolusi lebih tinggi untuk zoom di-decode
+    // terpisah, hanya saat dialog pratinjau (showPreview) benar-benar dibuka - lihat di bawah.
+    val thumbnailBitmap = remember(file.id, currentBytes) {
+        if (currentBytes != null && isImage) decodeSampledBitmap(currentBytes, THUMBNAIL_DECODE_TARGET_PX) else null
     }
 
     Box(
@@ -1391,8 +1394,8 @@ private fun EvidenceFileThumbnail(token: String, taskId: String, file: EvidenceF
         contentAlignment = Alignment.Center
     ) {
         when {
-            bitmap != null -> Image(
-                bitmap = bitmap.asImageBitmap(),
+            thumbnailBitmap != null -> Image(
+                bitmap = thumbnailBitmap.asImageBitmap(),
                 contentDescription = stringResource(R.string.cd_task_evidence_photo),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
@@ -1403,22 +1406,24 @@ private fun EvidenceFileThumbnail(token: String, taskId: String, file: EvidenceF
         }
     }
 
-    if (showPreview && bitmap != null) {
-        ImagePreviewDialog(bitmap = bitmap, onDismiss = { showPreview = false })
+    if (showPreview && currentBytes != null && isImage) {
+        val previewBitmap = remember(file.id, currentBytes) { decodeSampledBitmap(currentBytes, PREVIEW_DECODE_TARGET_PX) }
+        if (previewBitmap != null) {
+            ImagePreviewDialog(bitmap = previewBitmap, onDismiss = { showPreview = false })
+        }
     }
 }
 
-/** Pratinjau foto bukti tugas dalam ukuran penuh, dibuka dari EvidenceFileThumbnail. */
+/** Pratinjau foto bukti tugas dalam ukuran penuh (bisa dicubit untuk zoom), dibuka dari EvidenceFileThumbnail. */
 @Composable
 private fun ImagePreviewDialog(bitmap: Bitmap, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         text = {
-            Image(
-                bitmap = bitmap.asImageBitmap(),
+            ZoomableImage(
+                bitmap = bitmap,
                 contentDescription = stringResource(R.string.cd_evidence_preview),
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().height(420.dp)
             )
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) } }

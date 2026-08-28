@@ -265,7 +265,7 @@
     <string name="action_submit_as_done">Kirim sebagai selesai</string>
     <string name="error_unsupported_file_type">Jenis berkas tidak didukung (harus JPEG, PNG, PDF, Word, Excel, PowerPoint, atau TXT).</string>
     <string name="error_file_unreadable">Berkas tidak dapat dibaca.</string>
-    <string name="error_file_too_large">Berkas terlalu besar (maksimal 5MB per berkas).</string>
+    <string name="error_file_too_large">Berkas terlalu besar (maksimal 10MB per berkas).</string>
     <string name="label_file_fallback">Berkas</string>
     <string name="title_submit_task">Kirim \"%1$s\" sebagai selesai</string>
     <string name="desc_submit_evidence">Ceritakan apa yang sudah kamu lakukan, dan lampirkan foto/dokumen sebagai bukti (opsional, sampai %1$d berkas).</string>

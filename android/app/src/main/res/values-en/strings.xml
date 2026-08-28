@@ -256,7 +256,7 @@
     <string name="action_submit_as_done">Submit as done</string>
     <string name="error_unsupported_file_type">Unsupported file type (must be JPEG, PNG, PDF, Word, Excel, PowerPoint, or TXT).</string>
     <string name="error_file_unreadable">The file couldn\'t be read.</string>
-    <string name="error_file_too_large">File too large (5MB max per file).</string>
+    <string name="error_file_too_large">File too large (10MB max per file).</string>
     <string name="label_file_fallback">File</string>
     <string name="title_submit_task">Submit \"%1$s\" as done</string>
     <string name="desc_submit_evidence">Tell us what you did, and attach a photo/document as evidence (optional, up to %1$d files).</string>

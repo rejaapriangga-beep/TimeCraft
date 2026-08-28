@@ -2,11 +2,11 @@ package com.keluargakendali.ui
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -68,12 +68,21 @@ import com.keluargakendali.data.PactioApi
 import com.keluargakendali.service.AppForegroundState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.io.ByteArrayOutputStream
+import java.io.File
 import java.time.Instant
 import java.time.ZoneId
 
 /** Jaring pengaman untuk kamera/galeri chat, sama alasannya dengan PICKER_LOCK_SUPPRESSION_MS di ChildScreen. */
 private const val CHAT_PICKER_LOCK_SUPPRESSION_MS = 120_000L
+
+/** Sama dengan MAX_EVIDENCE_FILE_BYTES di backend (server.js) - validateEvidenceFile dipakai bersama untuk bukti tugas & foto chat. */
+private const val MAX_CHAT_PHOTO_BYTES = 10 * 1024 * 1024
+
+/** Berkas sementara untuk hasil jepretan kamera resolusi asli di chat - lihat createChatCaptureFile & takePicture di bawah. */
+private fun createChatCaptureFile(context: Context): File {
+    val dir = File(context.cacheDir, "evidence").apply { mkdirs() }
+    return File(dir, "chat_capture_${System.currentTimeMillis()}.jpg")
+}
 
 /**
  * Layar chat satu thread (satu anak, orang tua<->anak). Dipakai baik dari ParentScreen (dengan
@@ -112,15 +121,15 @@ fun ChatScreen(state: UiState, childId: String, onRefreshUnread: () -> Unit) {
     // tidak valid dipanggil langsung dari situ.
     val errorSendPhotoFailed = stringResource(R.string.error_send_photo_failed)
     val errorReadPhotoFailed = stringResource(R.string.error_read_photo_failed)
+    val errorPhotoTooLarge = stringResource(R.string.error_file_too_large)
     val errorReactFailed = stringResource(R.string.error_react_failed)
     val errorSendMessageFailed = stringResource(R.string.error_send_message_failed)
 
-    suspend fun sendPhoto(bitmap: Bitmap) {
+    // bytes dikirim APA ADANYA (tanpa decode-ulang ke Bitmap lalu dikompres lagi) supaya resolusi
+    // & kualitas foto asli (dari kamera maupun galeri) tidak berkurang.
+    suspend fun sendPhoto(bytes: ByteArray, mime: String) {
         sending = true
-        val output = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, output)
-        val bytes = output.toByteArray()
-        val dataUri = "data:image/jpeg;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
+        val dataUri = "data:$mime;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
         runCatching { PactioApi.sendChatPhoto(token, childId, dataUri, replyTarget?.id) }
             .onSuccess { sent ->
                 ChatPhotoCache.save(context, sent.id, bytes)
@@ -132,9 +141,22 @@ fun ChatScreen(state: UiState, childId: String, onRefreshUnread: () -> Unit) {
         sending = false
     }
 
-    val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+    // TakePicture() (bukan TakePicturePreview()) supaya kamera menulis foto RESOLUSI ASLI ke
+    // berkas lewat FileProvider - lihat catatan yang sama di ChildScreen.kt/SubmitEvidenceDialog.
+    var pendingCaptureFile by remember(childId) { mutableStateOf<File?>(null) }
+    val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         AppForegroundState.clearSuppression()
-        if (bitmap != null) scope.launch { sendPhoto(bitmap) }
+        val file = pendingCaptureFile
+        pendingCaptureFile = null
+        if (success && file != null) {
+            val bytes = runCatching { file.readBytes() }.getOrNull()
+            when {
+                bytes == null || bytes.isEmpty() -> sendError = errorReadPhotoFailed
+                bytes.size > MAX_CHAT_PHOTO_BYTES -> sendError = errorPhotoTooLarge
+                else -> scope.launch { sendPhoto(bytes, "image/jpeg") }
+            }
+        }
+        file?.delete()
     }
     // Photo Picker resmi Android (PickVisualMedia) - tidak butuh izin penyimpanan runtime,
     // hanya menampilkan galeri sistem, transparan sesuai batasan PRD.
@@ -142,9 +164,13 @@ fun ChatScreen(state: UiState, childId: String, onRefreshUnread: () -> Unit) {
         AppForegroundState.clearSuppression()
         if (uri != null) {
             scope.launch {
+                val mime = context.contentResolver.getType(uri) ?: "image/jpeg"
                 val bytes = runCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull()
-                val bitmap = bytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
-                if (bitmap == null) sendError = errorReadPhotoFailed else sendPhoto(bitmap)
+                when {
+                    bytes == null || bytes.isEmpty() -> sendError = errorReadPhotoFailed
+                    bytes.size > MAX_CHAT_PHOTO_BYTES -> sendError = errorPhotoTooLarge
+                    else -> sendPhoto(bytes, mime)
+                }
             }
         }
     }
@@ -260,7 +286,10 @@ fun ChatScreen(state: UiState, childId: String, onRefreshUnread: () -> Unit) {
             IconButton(
                 onClick = {
                     AppForegroundState.suppressLockFor(CHAT_PICKER_LOCK_SUPPRESSION_MS)
-                    takePicture.launch(null)
+                    val file = createChatCaptureFile(context)
+                    pendingCaptureFile = file
+                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                    takePicture.launch(uri)
                 },
                 enabled = !sending
             ) {
@@ -440,14 +469,14 @@ private fun ChatBubble(
  */
 @Composable
 private fun ChatPhotoContent(context: Context, token: String, childId: String, message: ChatMessageDto) {
-    var bitmap by remember(message.id) { mutableStateOf<Bitmap?>(null) }
+    var photoBytes by remember(message.id) { mutableStateOf<ByteArray?>(null) }
     var failed by remember(message.id) { mutableStateOf(false) }
     var showPreview by remember(message.id) { mutableStateOf(false) }
 
     LaunchedEffect(message.id) {
         val cached = ChatPhotoCache.read(context, message.id)
         if (cached != null) {
-            bitmap = BitmapFactory.decodeByteArray(cached, 0, cached.size)
+            photoBytes = cached
             return@LaunchedEffect
         }
         if (!message.photoAvailable) {
@@ -457,23 +486,28 @@ private fun ChatPhotoContent(context: Context, token: String, childId: String, m
         runCatching { PactioApi.getChatPhotoBytes(token, childId, message.id) }
             .onSuccess { bytes ->
                 ChatPhotoCache.save(context, message.id, bytes)
-                bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                photoBytes = bytes
             }
             .onFailure { failed = true }
     }
 
-    val current = bitmap
+    val currentBytes = photoBytes
+    // Thumbnail bubble di-decode dengan downsampling - lihat catatan yang sama di
+    // EvidenceFileThumbnail/ParentScreen.kt soal kenapa decode resolusi penuh dihindari di sini.
+    val thumbnail = remember(message.id, currentBytes) {
+        currentBytes?.let { decodeSampledBitmap(it, THUMBNAIL_DECODE_TARGET_PX) }
+    }
     Box(
         modifier = Modifier
             .size(180.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .clickable(enabled = current != null) { showPreview = true },
+            .clickable(enabled = thumbnail != null) { showPreview = true },
         contentAlignment = Alignment.Center
     ) {
         when {
-            current != null -> Image(
-                bitmap = current.asImageBitmap(),
+            thumbnail != null -> Image(
+                bitmap = thumbnail.asImageBitmap(),
                 contentDescription = stringResource(R.string.cd_chat_photo),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
@@ -486,8 +520,11 @@ private fun ChatPhotoContent(context: Context, token: String, childId: String, m
         }
     }
 
-    if (showPreview && current != null) {
-        ChatImagePreviewDialog(bitmap = current, onDismiss = { showPreview = false })
+    if (showPreview && currentBytes != null) {
+        val previewBitmap = remember(message.id, currentBytes) { decodeSampledBitmap(currentBytes, PREVIEW_DECODE_TARGET_PX) }
+        if (previewBitmap != null) {
+            ChatImagePreviewDialog(bitmap = previewBitmap, onDismiss = { showPreview = false })
+        }
     }
 }
 
@@ -496,11 +533,10 @@ private fun ChatImagePreviewDialog(bitmap: Bitmap, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         text = {
-            Image(
-                bitmap = bitmap.asImageBitmap(),
+            ZoomableImage(
+                bitmap = bitmap,
                 contentDescription = stringResource(R.string.cd_chat_photo_preview),
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().height(420.dp)
             )
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) } }

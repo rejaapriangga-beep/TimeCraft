@@ -13,7 +13,7 @@ const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, "data.json");
 // lama dari sebelum perubahan ini tetap ditemukan tanpa perlu migrasi folder.
 const PHOTOS_DIR = path.join(path.dirname(DATA_FILE), "photos");
 fs.mkdirSync(PHOTOS_DIR, { recursive: true });
-const MAX_EVIDENCE_FILE_BYTES = 5 * 1024 * 1024; // 5MB per berkas
+const MAX_EVIDENCE_FILE_BYTES = 10 * 1024 * 1024; // 10MB per berkas - cukup untuk foto kamera resolusi asli
 const MAX_EVIDENCE_FILES = 5; // per pengiriman tugas
 
 // Dashboard web orang tua (HTML/CSS/JS statis di folder web/, tanpa build step) - disajikan
@@ -429,7 +429,7 @@ function validateEvidenceFile(dataUri) {
   const ext = EVIDENCE_MIME_EXT[mime];
   if (!ext) throw new Error(`Jenis berkas "${mime}" tidak didukung (harus JPEG, PNG, PDF, Word, Excel, PowerPoint, atau TXT).`);
   const buffer = Buffer.from(base64, "base64");
-  if (buffer.length === 0 || buffer.length > MAX_EVIDENCE_FILE_BYTES) throw new Error("Ukuran berkas tidak valid (maksimal 5MB per berkas).");
+  if (buffer.length === 0 || buffer.length > MAX_EVIDENCE_FILE_BYTES) throw new Error("Ukuran berkas tidak valid (maksimal 10MB per berkas).");
   const magicOk = mime === "image/jpeg" ? buffer.subarray(0, 3).equals(JPEG_MAGIC)
     : mime === "image/png" ? buffer.subarray(0, 8).equals(PNG_MAGIC)
     : mime === "application/pdf" ? buffer.subarray(0, 4).equals(PDF_MAGIC)

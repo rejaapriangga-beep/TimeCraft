@@ -1,5 +1,9 @@
 package com.keluargakendali.ui
 
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,7 +47,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -230,4 +239,54 @@ fun ErrorBanner(message: String, onDismiss: () -> Unit) {
             }
         }
     }
+}
+
+/** Batas perbesaran pinch-to-zoom pada [ZoomableImage] - 1x (ukuran normal) sampai 5x. */
+private const val ZOOM_MIN_SCALE = 1f
+private const val ZOOM_MAX_SCALE = 5f
+
+/** Skala saat ketuk-dua-kali (double tap) untuk memperbesar cepat tanpa perlu mencubit. */
+private const val ZOOM_DOUBLE_TAP_SCALE = 3f
+
+/**
+ * Gambar dengan dukungan cubit-untuk-zoom (pinch-to-zoom) & geser saat diperbesar, plus
+ * ketuk-dua-kali untuk memperbesar/kembali cepat - dipakai di dialog pratinjau foto (bukti
+ * tugas & chat). Skala dan posisi geser di-reset otomatis tiap kali komposisi ini dibuat ulang
+ * (mis. dialog ditutup lalu dibuka lagi untuk foto lain), karena state-nya di-remember secara
+ * lokal di sini, bukan dinaikkan ke pemanggil.
+ */
+@Composable
+fun ZoomableImage(bitmap: Bitmap, contentDescription: String?, modifier: Modifier = Modifier) {
+    var scale by remember { mutableStateOf(ZOOM_MIN_SCALE) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+
+    Image(
+        bitmap = bitmap.asImageBitmap(),
+        contentDescription = contentDescription,
+        contentScale = ContentScale.Fit,
+        modifier = modifier
+            .graphicsLayer(
+                scaleX = scale,
+                scaleY = scale,
+                translationX = offset.x,
+                translationY = offset.y
+            )
+            .pointerInput(Unit) {
+                detectTransformGestures { _, pan, zoom, _ ->
+                    val newScale = (scale * zoom).coerceIn(ZOOM_MIN_SCALE, ZOOM_MAX_SCALE)
+                    scale = newScale
+                    offset = if (newScale <= ZOOM_MIN_SCALE) Offset.Zero else offset + pan
+                }
+            }
+            .pointerInput(Unit) {
+                detectTapGestures(onDoubleTap = {
+                    if (scale > ZOOM_MIN_SCALE) {
+                        scale = ZOOM_MIN_SCALE
+                        offset = Offset.Zero
+                    } else {
+                        scale = ZOOM_DOUBLE_TAP_SCALE
+                    }
+                })
+            }
+    )
 }
