@@ -1,5 +1,7 @@
 package com.keluargakendali.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -33,12 +36,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.keluargakendali.R
+
+/** Sama dengan BASE_URL di PactioApi.kt - dipisah di sini (bukan diimpor) karena BASE_URL bersifat private di sana dan halaman ini murni ditampilkan lewat browser, bukan lewat API. */
+private const val TERMS_URL = "https://timecraft.my.id/terms"
 
 /**
  * Sub-langkah alur masuk orang tua — hanya muncul lewat link kecil di layar landing anak.
@@ -52,7 +59,7 @@ private enum class ParentStep { NONE, LOGIN, REGISTER }
 @Composable
 fun AuthScreen(
     state: UiState,
-    onRegisterParent: (familyName: String, name: String, email: String, password: String) -> Unit,
+    onRegisterParent: (familyName: String, name: String, email: String, password: String, acceptedTerms: Boolean) -> Unit,
     onLoginParent: (email: String, password: String) -> Unit,
     onLoginChild: (familyCode: String, pin: String) -> Unit,
     onDismissMessage: () -> Unit
@@ -184,11 +191,13 @@ private fun ParentSheetForm(state: UiState, onDismissMessage: () -> Unit, conten
 }
 
 @Composable
-private fun RegisterParentForm(loading: Boolean, onSubmit: (String, String, String, String) -> Unit) {
+private fun RegisterParentForm(loading: Boolean, onSubmit: (String, String, String, String, Boolean) -> Unit) {
     var familyName by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var acceptedTerms by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text(stringResource(R.string.option_register_title), style = MaterialTheme.typography.titleLarge)
@@ -201,9 +210,32 @@ private fun RegisterParentForm(loading: Boolean, onSubmit: (String, String, Stri
             modifier = Modifier.fillMaxWidth()
         )
         PasswordField(password, { password = it }, stringResource(R.string.label_password_min8), KeyboardType.Password)
+
+        // Kesepakatan eksplisit (bukan cuma halaman yang ada tapi tidak wajib dibaca) - server
+        // MENOLAK pendaftaran kalau acceptedTerms tidak true, lihat catatan di server.js. Baris
+        // teks & centang dipisah jadi dua elemen klik terpisah: label untuk toggle centang,
+        // "Kebijakan Penggunaan" khusus untuk buka halamannya di browser.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = acceptedTerms, onCheckedChange = { acceptedTerms = it })
+            Text(
+                stringResource(R.string.label_accept_terms_prefix),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.clickable { acceptedTerms = !acceptedTerms }
+            )
+            Text(
+                stringResource(R.string.link_terms_of_use),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(TERMS_URL)))
+                }
+            )
+        }
+
         Button(
-            onClick = { onSubmit(familyName.trim(), name.trim(), email.trim(), password) },
-            enabled = !loading && familyName.isNotBlank() && name.isNotBlank() && email.isNotBlank() && password.length >= 8,
+            onClick = { onSubmit(familyName.trim(), name.trim(), email.trim(), password, acceptedTerms) },
+            enabled = !loading && familyName.isNotBlank() && name.isNotBlank() && email.isNotBlank() && password.length >= 8 && acceptedTerms,
             shape = RoundedCornerShape(14.dp),
             modifier = Modifier.fillMaxWidth().height(52.dp)
         ) { Text(stringResource(R.string.action_register_family), style = MaterialTheme.typography.labelLarge) }

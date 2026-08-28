@@ -34,6 +34,12 @@ fs.mkdirSync(CHAT_RELAY_DIR, { recursive: true });
 const CHAT_PHOTO_RETENTION_MS = 48 * 60 * 60 * 1000; // 48 jam
 const MAX_CHAT_TEXT_LENGTH = 2000;
 
+// Versi Kebijakan Penggunaan (lihat web/terms.html) yang berlaku SAAT INI - dicatat di setiap
+// akun orang tua yang mendaftar (termsAcceptedAt + termsVersion) sebagai bukti persetujuan.
+// Ganti nilai ini setiap kali isi terms.html berubah secara substansial, supaya akun lama bisa
+// dibedakan dari yang sudah menyetujui versi terbaru (mis. untuk gate persetujuan ulang nanti).
+const TERMS_VERSION = "2026-08-28";
+
 // --- Filter otomatis pesan chat (deteksi kasar transaksi ilegal/konten terlarang) -------
 // LAPISAN PERTAMA saja, BUKAN solusi lengkap - daftar kata kunci sederhana ini pasti bisa
 // lolos dengan penulisan yang disamarkan (mis. "s4bu", spasi aneh) dan berpotensi salah
@@ -670,9 +676,17 @@ async function route(req, res) {
     const name = requireText(body.name, "Nama orang tua");
     const email = requireText(body.email, "Email").toLowerCase();
     const password = requireText(body.password, "Kata sandi", 8);
+    // Persetujuan Kebijakan Penggunaan WAJIB dikirim eksplisit (bukan diasumsikan true) - lihat
+    // TERMS_VERSION & terms.html. Dicatat sebagai bukti persetujuan, bukan cuma gerbang UI.
+    if (body.acceptedTerms !== true) {
+      return send(res, 400, { error: "Anda harus menyetujui Kebijakan Penggunaan untuk mendaftar." });
+    }
     if (db.users.some((user) => user.email === email)) return send(res, 409, { error: "Email sudah terdaftar." });
     const family = { id: id("family"), name: familyName, code: crypto.randomBytes(3).toString("hex").toUpperCase() };
-    const user = { id: id("user"), familyId: family.id, role: "parent", name, email, passwordHash: hash(password) };
+    const user = {
+      id: id("user"), familyId: family.id, role: "parent", name, email, passwordHash: hash(password),
+      termsAcceptedAt: new Date().toISOString(), termsVersion: TERMS_VERSION
+    };
     db.families.push(family); db.users.push(user); save();
     return send(res, 201, { token: createSession(user), user: publicUser(user), family: { id: family.id, name: family.name, code: family.code } });
   }
@@ -716,14 +730,22 @@ async function route(req, res) {
       return send(res, 200, { token, user: publicUser(user) });
     }
 
-    // Belum ada akun sama sekali untuk akun Google ini -> buat keluarga baru otomatis.
+    // Belum ada akun sama sekali untuk akun Google ini -> buat keluarga baru otomatis. Sama
+    // seperti register-parent, persetujuan Kebijakan Penggunaan WAJIB dikirim eksplisit karena
+    // ini juga membuat akun baru (bukan sekadar login) - lihat TERMS_VERSION.
+    if (body.acceptedTerms !== true) {
+      return send(res, 400, { error: "Anda harus menyetujui Kebijakan Penggunaan untuk mendaftar." });
+    }
     // Nama keluarga sengaja diturunkan dari nama profil Google (bukan diminta lewat form
     // tambahan) supaya alur Google Sign-In tetap satu langkah; bisa diubah lagi nanti kalau
     // fitur ubah nama keluarga sudah ada.
     const displayName = requireText(payload.name || payload.given_name || payload.email, "Nama orang tua");
     const familyName = requireText(body.familyName || `Keluarga ${payload.given_name || displayName}`, "Nama keluarga");
     const family = { id: id("family"), name: familyName, code: crypto.randomBytes(3).toString("hex").toUpperCase() };
-    const newUser = { id: id("user"), familyId: family.id, role: "parent", name: displayName, email, googleId, passwordHash: null };
+    const newUser = {
+      id: id("user"), familyId: family.id, role: "parent", name: displayName, email, googleId, passwordHash: null,
+      termsAcceptedAt: new Date().toISOString(), termsVersion: TERMS_VERSION
+    };
     db.families.push(family); db.users.push(newUser); save();
     return send(res, 201, {
       token: createSession(newUser),

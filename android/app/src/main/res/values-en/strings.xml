@@ -21,6 +21,8 @@
     <string name="label_email">Email</string>
     <string name="label_password_min8">Password (at least 8 characters)</string>
     <string name="action_register_family">Register Family</string>
+    <string name="label_accept_terms_prefix">I agree to the </string>
+    <string name="link_terms_of_use">Terms of Use</string>
     <string name="label_password">Password</string>
     <string name="action_login">Sign In</string>
 

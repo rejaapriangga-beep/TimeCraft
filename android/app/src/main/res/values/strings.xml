@@ -28,6 +28,8 @@
     <string name="label_email">Email</string>
     <string name="label_password_min8">Kata sandi (minimal 8 karakter)</string>
     <string name="action_register_family">Daftarkan Keluarga</string>
+    <string name="label_accept_terms_prefix">Saya menyetujui </string>
+    <string name="link_terms_of_use">Kebijakan Penggunaan</string>
     <string name="label_password">Kata sandi</string>
     <string name="action_login">Masuk</string>
 

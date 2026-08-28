@@ -27,12 +27,14 @@ object PactioApi {
         json.optBoolean("ok", false)
     }.getOrDefault(false)
 
-    suspend fun registerParent(familyName: String, name: String, email: String, password: String): AuthResult {
+    /** acceptedTerms harus true (dicentang eksplisit di RegisterParentForm) - server menolak pendaftaran kalau tidak, lihat catatan TERMS_VERSION di server.js. */
+    suspend fun registerParent(familyName: String, name: String, email: String, password: String, acceptedTerms: Boolean): AuthResult {
         val body = JSONObject()
             .put("familyName", familyName)
             .put("name", name)
             .put("email", email)
             .put("password", password)
+            .put("acceptedTerms", acceptedTerms)
         val json = request("POST", "/auth/register-parent", token = null, body = body)
         return AuthResult(
             token = json.getString("token"),

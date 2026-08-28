@@ -16,7 +16,7 @@ async function request(path, options = {}) {
 
 test("orang tua dapat memberi hadiah akses setelah tugas disetujui", async () => {
   const suffix = Date.now();
-  const registered = await request("/auth/register-parent", { method: "POST", body: JSON.stringify({ familyName: "Keluarga Uji", name: "Ibu", email: `ibu${suffix}@contoh.id`, password: "rahasia-aman" }) });
+  const registered = await request("/auth/register-parent", { method: "POST", body: JSON.stringify({ familyName: "Keluarga Uji", name: "Ibu", email: `ibu${suffix}@contoh.id`, password: "rahasia-aman", acceptedTerms: true }) });
   assert.equal(registered.status, 201);
   const parentAuth = { Authorization: `Bearer ${registered.body.token}` };
   const child = await request("/family/children", { method: "POST", headers: parentAuth, body: JSON.stringify({ name: "Budi", pin: "1234" }) });
@@ -32,8 +32,8 @@ test("orang tua dapat memberi hadiah akses setelah tugas disetujui", async () =>
 
 test("chat grup keluarga (thread \"family\") tidak bocor ke keluarga lain", async () => {
   const suffix = Date.now();
-  const familyA = await request("/auth/register-parent", { method: "POST", body: JSON.stringify({ familyName: "Keluarga A", name: "Ayah A", email: `ayahA${suffix}@contoh.id`, password: "rahasia-aman" }) });
-  const familyB = await request("/auth/register-parent", { method: "POST", body: JSON.stringify({ familyName: "Keluarga B", name: "Ayah B", email: `ayahB${suffix}@contoh.id`, password: "rahasia-aman" }) });
+  const familyA = await request("/auth/register-parent", { method: "POST", body: JSON.stringify({ familyName: "Keluarga A", name: "Ayah A", email: `ayahA${suffix}@contoh.id`, password: "rahasia-aman", acceptedTerms: true }) });
+  const familyB = await request("/auth/register-parent", { method: "POST", body: JSON.stringify({ familyName: "Keluarga B", name: "Ayah B", email: `ayahB${suffix}@contoh.id`, password: "rahasia-aman", acceptedTerms: true }) });
   const authA = { Authorization: `Bearer ${familyA.body.token}` };
   const authB = { Authorization: `Bearer ${familyB.body.token}` };
 
@@ -55,7 +55,7 @@ test("chat grup keluarga (thread \"family\") tidak bocor ke keluarga lain", asyn
 
 test("hapus akun menolak kata sandi salah, lalu menghapus seluruh data keluarga kalau benar", async () => {
   const suffix = Date.now();
-  const registered = await request("/auth/register-parent", { method: "POST", body: JSON.stringify({ familyName: "Keluarga Hapus", name: "Ibu", email: `hapus${suffix}@contoh.id`, password: "rahasia-aman" }) });
+  const registered = await request("/auth/register-parent", { method: "POST", body: JSON.stringify({ familyName: "Keluarga Hapus", name: "Ibu", email: `hapus${suffix}@contoh.id`, password: "rahasia-aman", acceptedTerms: true }) });
   const parentAuth = { Authorization: `Bearer ${registered.body.token}` };
   const child = await request("/family/children", { method: "POST", headers: parentAuth, body: JSON.stringify({ name: "Budi", pin: "1234" }) });
   await request("/tasks", { method: "POST", headers: parentAuth, body: JSON.stringify({ childId: child.body.child.id, title: "Belajar", rewardMinutes: 20 }) });
@@ -78,7 +78,7 @@ test("hapus akun menolak kata sandi salah, lalu menghapus seluruh data keluarga 
 
 test("ubah kata sandi: tolak kata sandi lama salah, cabut sesi device lain, sesi sendiri tetap hidup", async () => {
   const suffix = Date.now();
-  const registered = await request("/auth/register-parent", { method: "POST", body: JSON.stringify({ familyName: "Keluarga Sandi", name: "Ayah", email: `sandi${suffix}@contoh.id`, password: "sandi-lama-aman" }) });
+  const registered = await request("/auth/register-parent", { method: "POST", body: JSON.stringify({ familyName: "Keluarga Sandi", name: "Ayah", email: `sandi${suffix}@contoh.id`, password: "sandi-lama-aman", acceptedTerms: true }) });
   const authA = { Authorization: `Bearer ${registered.body.token}` };
 
   // Simulasikan "device lain" - login ulang pakai kredensial yang sama menghasilkan token kedua.
@@ -104,4 +104,17 @@ test("ubah kata sandi: tolak kata sandi lama salah, cabut sesi device lain, sesi
   assert.equal(loginOldPassword.status, 401);
   const loginNewPassword = await request("/auth/login-parent", { method: "POST", body: JSON.stringify({ email: `sandi${suffix}@contoh.id`, password: "sandi-baru-aman" }) });
   assert.equal(loginNewPassword.status, 200);
+});
+
+test("pendaftaran orang tua ditolak kalau Kebijakan Penggunaan belum disetujui", async () => {
+  const suffix = Date.now();
+  const withoutTerms = await request("/auth/register-parent", { method: "POST", body: JSON.stringify({ familyName: "Keluarga Tanpa Setuju", name: "Ibu", email: `tanpasetuju${suffix}@contoh.id`, password: "rahasia-aman" }) });
+  assert.equal(withoutTerms.status, 400);
+
+  const withFalseTerms = await request("/auth/register-parent", { method: "POST", body: JSON.stringify({ familyName: "Keluarga Tanpa Setuju", name: "Ibu", email: `tanpasetuju2${suffix}@contoh.id`, password: "rahasia-aman", acceptedTerms: false }) });
+  assert.equal(withFalseTerms.status, 400);
+
+  const withTerms = await request("/auth/register-parent", { method: "POST", body: JSON.stringify({ familyName: "Keluarga Setuju", name: "Ibu", email: `setuju${suffix}@contoh.id`, password: "rahasia-aman", acceptedTerms: true }) });
+  assert.equal(withTerms.status, 201);
+  assert.ok(withTerms.body.token);
 });

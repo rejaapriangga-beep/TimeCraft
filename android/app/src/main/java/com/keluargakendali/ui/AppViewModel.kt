@@ -79,8 +79,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun registerParent(familyName: String, name: String, email: String, password: String) = launchGuarded {
-        val result = PactioApi.registerParent(familyName, name, email, password)
+    fun registerParent(familyName: String, name: String, email: String, password: String, acceptedTerms: Boolean) = launchGuarded {
+        val result = PactioApi.registerParent(familyName, name, email, password, acceptedTerms)
         onAuthSuccess(result.token, result.user)
     }
 
