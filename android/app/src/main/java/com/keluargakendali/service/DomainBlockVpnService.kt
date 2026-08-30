@@ -293,7 +293,11 @@ class DomainBlockVpnService : VpnService() {
         private const val CHANNEL_ID = "domain_block"
         private const val TUNNEL_ADDRESS = "10.0.0.2"
         private val TUNNEL_ADDRESS_BYTES = byteArrayOf(10, 0, 0, 2)
-        private const val SYNC_INTERVAL_MS = 60_000L
+        // Preset kategori (lihat preset-blocklists.json) bisa berisi puluhan ribu domain (~1,6MB
+        // sebagai JSON) - sinkron tiap beberapa jam, BUKAN tiap menit, supaya tidak boros kuota
+        // data anak (1,6MB/menit = >2GB/hari kalau terlalu sering). Perubahan blokir dari orang
+        // tua tidak butuh langsung berlaku detik itu juga, beda dengan status Mode Kunci.
+        private const val SYNC_INTERVAL_MS = 4 * 60 * 60 * 1000L
         private const val UPSTREAM_DNS = "1.1.1.1"
         private const val UPSTREAM_TIMEOUT_MS = 5_000
         private const val MAX_PACKET_SIZE = 32767
