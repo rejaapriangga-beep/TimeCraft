@@ -271,6 +271,11 @@
     <string name="desc_lock_permission_not_granted">Supaya orang tua bisa mengunci akses aplikasi lain kalau perlu, izinkan akses berikut lewat Pengaturan HP. Bisa dicabut kapan saja.</string>
     <string name="action_allow_overlay">Izinkan Tampil di Atas Aplikasi Lain</string>
     <string name="desc_lock_child_note">Kunci/buka kunci perangkat hanya bisa diatur oleh orang tua. Kamu tetap bisa memakai saldo menit hadiah untuk membuka akses sementara lewat tab Dashboard.</string>
+    <string name="heading_domain_block">Blokir Domain</string>
+    <string name="desc_domain_block_permission_granted">Domain/situs yang diblokir orang tua tidak bisa diakses di HP ini. Kamu bisa mencabut izin ini kapan saja lewat Pengaturan HP.</string>
+    <string name="desc_domain_block_permission_not_granted">Supaya orang tua bisa memblokir domain/situs tertentu di HP ini, izinkan koneksi VPN lokal berikut. Ini HANYA menyaring nama domain (DNS), tidak membaca isi trafik kamu.</string>
+    <string name="action_allow_vpn">Izinkan Koneksi VPN Lokal</string>
+    <string name="desc_domain_block_child_note">Daftar domain yang diblokir hanya bisa diatur oleh orang tua lewat Pengaturan.</string>
     <string name="label_name">Nama</string>
     <string name="desc_logout_hint">Untuk keluar dari akun ini, gunakan tombol \"Keluar\" di pojok kanan atas.</string>
     <string name="heading_access_balance">Saldo Akses Hadiah</string>
@@ -329,6 +334,11 @@
     <string name="channel_device_control">Kontrol Perangkat</string>
     <string name="notif_title_device_control_active">TimeCraft - Kontrol Perangkat aktif</string>
     <string name="notif_text_monitoring_lock">Memantau status kunci dari orang tua.</string>
+
+    <!-- DomainBlockVpnService.kt (bukan Compose - dipakai via Context.getString()) -->
+    <string name="channel_domain_block">Blokir Domain</string>
+    <string name="notif_title_domain_block_active">TimeCraft - Blokir Domain aktif</string>
+    <string name="notif_text_domain_block">Menyaring domain yang diblokir orang tua.</string>
 
     <!-- AppViewModel.kt (bukan Compose - dipakai via getApplication<Application>().getString()) -->
     <string name="error_session_expired">Sesi berakhir, silakan masuk kembali.</string>

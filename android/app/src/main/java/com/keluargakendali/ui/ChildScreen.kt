@@ -77,6 +77,8 @@ import com.keluargakendali.data.TaskDto
 import com.keluargakendali.service.AppForegroundState
 import com.keluargakendali.service.DeviceLockPermissions
 import com.keluargakendali.service.DeviceLockService
+import com.keluargakendali.service.DomainBlockPermissions
+import com.keluargakendali.service.DomainBlockVpnService
 import kotlinx.coroutines.delay
 import java.io.File
 
@@ -129,6 +131,29 @@ fun ChildScreen(
         onDispose { context.stopService(Intent(context, DeviceLockService::class.java)) }
     }
 
+    // Blokir Domain: sama pola persis dengan Kontrol Perangkat di atas (dihoist ke sini, bukan
+    // di dalam badan tab) - nyala/matikan DomainBlockVpnService mengikuti izin VPN sistem, TIDAK
+    // bergantung tab mana yang sedang aktif. Izin VPN (VpnService.prepare) beda dari izin overlay
+    // di atas - butuh Intent sistem yang diluncurkan lewat ActivityResultLauncher, bukan cuma
+    // dicek statusnya lewat fungsi biasa.
+    var hasVpnPermission by remember { mutableStateOf(DomainBlockPermissions.prepareIntent(context) == null) }
+    val vpnPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        hasVpnPermission = DomainBlockPermissions.prepareIntent(context) == null
+    }
+    LaunchedEffect(Unit) {
+        while (true) {
+            hasVpnPermission = DomainBlockPermissions.prepareIntent(context) == null
+            delay(2000)
+        }
+    }
+    LaunchedEffect(hasVpnPermission) {
+        val intent = Intent(context, DomainBlockVpnService::class.java)
+        if (hasVpnPermission) context.startForegroundService(intent) else context.stopService(intent)
+    }
+    DisposableEffect(Unit) {
+        onDispose { context.stopService(Intent(context, DomainBlockVpnService::class.java)) }
+    }
+
     // Pengaturan sengaja TIDAK ikut sebagai tab - dipindah jadi ikon gerigi di TopAppBar
     // (lihat MainActivity), tepat di sebelah kiri "Keluar", supaya 4 tab ini muat satu baris.
     val tabs = listOf(
@@ -154,7 +179,15 @@ fun ChildScreen(
                 onSelectThread = { selectedChatThreadId = it },
                 onRefreshUnread = onRefreshChatUnread
             )
-            3 -> ChildLockTab(hasOverlay = hasOverlay, onOpenSettings = { context.startActivity(DeviceLockPermissions.overlaySettingsIntent(context)) })
+            3 -> ChildLockTab(
+                hasOverlay = hasOverlay,
+                onOpenSettings = { context.startActivity(DeviceLockPermissions.overlaySettingsIntent(context)) },
+                hasVpnPermission = hasVpnPermission,
+                onRequestVpnPermission = {
+                    val prepareIntent = DomainBlockPermissions.prepareIntent(context)
+                    if (prepareIntent != null) vpnPermissionLauncher.launch(prepareIntent) else hasVpnPermission = true
+                }
+            )
         }
     }
 
@@ -311,8 +344,13 @@ private fun ChildChatTab(
 
 /** Status izin Mode Kunci - anak cuma bisa MELIHAT status & memberi izin, mengaktifkan/mematikan kuncinya sendiri tetap wewenang orang tua. */
 @Composable
-private fun ChildLockTab(hasOverlay: Boolean, onOpenSettings: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+private fun ChildLockTab(
+    hasOverlay: Boolean,
+    onOpenSettings: () -> Unit,
+    hasVpnPermission: Boolean,
+    onRequestVpnPermission: () -> Unit
+) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.heading_device_lock), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Card(
             colors = CardDefaults.cardColors(
@@ -339,6 +377,37 @@ private fun ChildLockTab(hasOverlay: Boolean, onOpenSettings: () -> Unit) {
         }
         Text(
             stringResource(R.string.desc_lock_child_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(Modifier.height(8.dp))
+        Text(stringResource(R.string.heading_domain_block), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = if (hasVpnPermission) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    if (hasVpnPermission) stringResource(R.string.label_permission_granted) else stringResource(R.string.label_permission_not_granted),
+                    fontWeight = FontWeight.Bold,
+                    color = if (hasVpnPermission) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    if (hasVpnPermission) stringResource(R.string.desc_domain_block_permission_granted) else stringResource(R.string.desc_domain_block_permission_not_granted),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (hasVpnPermission) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                if (!hasVpnPermission) {
+                    Button(onClick = onRequestVpnPermission, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.action_allow_vpn))
+                    }
+                }
+            }
+        }
+        Text(
+            stringResource(R.string.desc_domain_block_child_note),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

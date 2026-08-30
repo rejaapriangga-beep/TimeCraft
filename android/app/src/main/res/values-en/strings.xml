@@ -261,6 +261,11 @@
     <string name="desc_lock_permission_not_granted">So a parent can lock access to other apps when needed, allow the following access from your phone\'s Settings. It can be revoked any time.</string>
     <string name="action_allow_overlay">Allow Display Over Other Apps</string>
     <string name="desc_lock_child_note">Locking/unlocking the device can only be set by a parent. You can still use your reward minutes to unlock access temporarily from the Dashboard tab.</string>
+    <string name="heading_domain_block">Domain Block</string>
+    <string name="desc_domain_block_permission_granted">Domains/sites blocked by a parent can\'t be reached on this phone. You can revoke this permission anytime from phone Settings.</string>
+    <string name="desc_domain_block_permission_not_granted">So a parent can block specific domains/sites on this phone, allow the local VPN connection below. This ONLY filters domain names (DNS) - it doesn\'t read your traffic content.</string>
+    <string name="action_allow_vpn">Allow Local VPN Connection</string>
+    <string name="desc_domain_block_child_note">The blocked domain list can only be managed by a parent from Settings.</string>
     <string name="label_name">Name</string>
     <string name="desc_logout_hint">To sign out of this account, use the \"Log out\" button at the top right.</string>
     <string name="heading_access_balance">Reward Access Balance</string>
@@ -319,6 +324,11 @@
     <string name="channel_device_control">Device Control</string>
     <string name="notif_title_device_control_active">TimeCraft - Device Control active</string>
     <string name="notif_text_monitoring_lock">Monitoring lock status from a parent.</string>
+
+    <!-- DomainBlockVpnService.kt (not Compose - used via Context.getString()) -->
+    <string name="channel_domain_block">Domain Block</string>
+    <string name="notif_title_domain_block_active">TimeCraft - Domain Block active</string>
+    <string name="notif_text_domain_block">Filtering domains blocked by a parent.</string>
 
     <!-- AppViewModel.kt (not Compose - used via getApplication<Application>().getString()) -->
     <string name="error_session_expired">Session expired, please sign in again.</string>

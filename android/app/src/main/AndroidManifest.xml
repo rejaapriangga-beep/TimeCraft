@@ -46,6 +46,27 @@
         </service>
 
         <!--
+            VPN lokal resmi Android (VpnService, TIDAK butuh root) untuk fitur Blokir Domain -
+            lihat komentar lengkap di DomainBlockVpnService.kt. permission="BIND_VPN_SERVICE"
+            (bukan <uses-permission>) & intent-filter action VpnService WAJIB persis seperti ini
+            supaya sistem Android mengenali komponen ini sebagai layanan VPN yang sah - pengguna
+            tetap harus menyetujui dialog izin VPN sistem sendiri (VpnService.prepare), TIDAK
+            aktif diam-diam, dan selalu terlihat lewat ikon kunci VPN + notifikasi persisten.
+        -->
+        <service
+            android:name=".service.DomainBlockVpnService"
+            android:exported="false"
+            android:permission="android.permission.BIND_VPN_SERVICE"
+            android:foregroundServiceType="specialUse">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Menyaring domain yang diblokir orang tua lewat filter DNS lokal (VPN lokal, bukan pemantauan trafik)." />
+        </service>
+
+        <!--
             Device admin KHUSUS proteksi anti-uninstall (lihat komentar lengkap di
             UninstallProtectionAdminReceiver.kt) - orang tua mengaktifkannya sendiri lewat
             dialog sistem resmi Android (ACTION_ADD_DEVICE_ADMIN) di menu Pengaturan aplikasi,
