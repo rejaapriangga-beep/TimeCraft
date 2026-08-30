@@ -167,14 +167,31 @@ fun ChildScreen(
         }
     }
 
+    // Tab "Kunci Perangkat" SENGAJA disembunyikan begitu KEDUA izin (overlay Mode Kunci + VPN
+    // Blokir Domain) sudah disetujui anak - supaya tidak jadi pengingat harian yang justru
+    // memancing anak cari cara mengakalinya (mis. tanya AI/internet "cara matikan izin X di
+    // TimeCraft"). Ini murni soal visibilitas MENU di app - service penegaknya (DeviceLockService/
+    // DomainBlockVpnService di atas) tetap jalan sama persis terlepas dari tab ini terlihat atau
+    // tidak. Tab ini otomatis MUNCUL LAGI kalau salah satu izin kembali tercabut (lihat hasOverlay/
+    // hasVpnPermission di atas), supaya anak tetap punya jalan menyetujui ulang kalau perlu -
+    // bukan hilang selamanya, cuma tidak terus-terusan terlihat selama semuanya sudah beres.
+    val showLockTab = !(hasOverlay && hasVpnPermission)
+
     // Pengaturan sengaja TIDAK ikut sebagai tab - dipindah jadi ikon gerigi di TopAppBar
-    // (lihat MainActivity), tepat di sebelah kiri "Keluar", supaya 4 tab ini muat satu baris.
-    val tabs = listOf(
-        TabItem(stringResource(R.string.tab_dashboard), Icons.Default.Dashboard),
-        TabItem(stringResource(R.string.tab_tasks), Icons.Default.Checklist),
-        TabItem(stringResource(R.string.tab_chat), Icons.Default.Chat, badgeCount = state.chatUnreadTotal),
-        TabItem(stringResource(R.string.tab_lock), Icons.Default.Lock)
-    )
+    // (lihat MainActivity), tepat di sebelah kiri "Keluar", supaya tab-tab ini muat satu baris.
+    val tabs = buildList {
+        add(TabItem(stringResource(R.string.tab_dashboard), Icons.Default.Dashboard))
+        add(TabItem(stringResource(R.string.tab_tasks), Icons.Default.Checklist))
+        add(TabItem(stringResource(R.string.tab_chat), Icons.Default.Chat, badgeCount = state.chatUnreadTotal))
+        if (showLockTab) add(TabItem(stringResource(R.string.tab_lock), Icons.Default.Lock))
+    }
+
+    // Kalau tab Kunci Perangkat menghilang PERSIS saat sedang dipilih (anak baru saja
+    // menyelesaikan izin terakhirnya di tab ini sendiri), pindah ke Dashboard - bukan
+    // dibiarkan menunjuk ke tab yang sudah tidak ada (layar kosong).
+    LaunchedEffect(showLockTab) {
+        if (!showLockTab && selectedTab == 3) selectedTab = 0
+    }
 
     Column(Modifier.fillMaxSize()) {
         state.errorMessage?.let {
@@ -192,7 +209,7 @@ fun ChildScreen(
                 onSelectThread = { selectedChatThreadId = it },
                 onRefreshUnread = onRefreshChatUnread
             )
-            3 -> ChildLockTab(
+            3 -> if (showLockTab) ChildLockTab(
                 hasOverlay = hasOverlay,
                 onOpenSettings = { context.startActivity(DeviceLockPermissions.overlaySettingsIntent(context)) },
                 hasVpnPermission = hasVpnPermission,
