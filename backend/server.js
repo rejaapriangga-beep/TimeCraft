@@ -963,13 +963,18 @@ async function route(req, res) {
   // Dibaca baik oleh orang tua (layar Pengaturan) maupun anak (DomainBlockVpnService sinkron
   // daftar blokir secara berkala) - effectiveDomains sudah gabungan customDomains + domain dari
   // semua preset yang dicentang, siap dipakai langsung sebagai daftar blokir DNS di Android.
+  // HANYA dihitung untuk anak (bisa puluhan ribu domain dari isi preset, lihat
+  // preset-blocklists.json) - dialog Pengaturan orang tua tidak pernah memakai field ini, jadi
+  // percuma dikirim/di-parse (bikin dialog terasa lambat/macet tanpa alasan, terutama di
+  // koneksi seluler yang lambat).
   if (req.method === "GET" && pathname === "/family/blocked-domains") {
     const user = auth(req, res); if (!user) return;
     const family = familyFor(user);
     const customDomains = Array.isArray(family.blockedDomains) ? family.blockedDomains : [];
     const presetKeys = Array.isArray(family.blockedPresetKeys) ? family.blockedPresetKeys : [];
-    const presets = loadPresetBlocklists();
-    const effectiveDomains = Array.from(new Set([...customDomains, ...presetKeys.flatMap((key) => presets[key] || [])]));
+    const effectiveDomains = user.role === "child"
+      ? Array.from(new Set([...customDomains, ...presetKeys.flatMap((key) => loadPresetBlocklists()[key] || [])]))
+      : [];
     return send(res, 200, { customDomains, presetKeys, effectiveDomains, presetCategories: PRESET_CATEGORIES });
   }
 
@@ -990,10 +995,11 @@ async function route(req, res) {
     family.blockedPresetKeys = presetKeys;
     logActivity(parent, "blocked_domains_updated", `${customDomains.length} domain custom, ${presetKeys.length} kategori preset`); save();
     // Bentuk respons SAMA seperti GET (bukan cuma echo customDomains/presetKeys) supaya klien
-    // Android bisa langsung pakai hasilnya tanpa perlu GET ulang setelah menyimpan.
-    const presets = loadPresetBlocklists();
-    const effectiveDomains = Array.from(new Set([...customDomains, ...presetKeys.flatMap((key) => presets[key] || [])]));
-    return send(res, 200, { customDomains, presetKeys, effectiveDomains, presetCategories: PRESET_CATEGORIES });
+    // Android bisa langsung pakai hasilnya tanpa perlu GET ulang setelah menyimpan. effectiveDomains
+    // SENGAJA selalu kosong di sini (bukan dihitung ulang dari preset-blocklists.json) - endpoint
+    // ini cuma dipanggil orang tua (lihat auth di atas), yang tidak pernah memakai field ini (lihat
+    // catatan GET) - menghindari parse ulang puluhan ribu domain preset pada setiap kali Simpan.
+    return send(res, 200, { customDomains, presetKeys, effectiveDomains: [], presetCategories: PRESET_CATEGORIES });
   }
 
   // Ubah kata sandi orang tua (self-service dari menu Pengaturan) - wajib konfirmasi kata

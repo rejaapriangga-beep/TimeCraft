@@ -254,7 +254,6 @@ fun ParentScreen(
  */
 @Composable
 fun ParentSettingsDialog(
-    token: String,
     children: List<UserDto>,
     activityLog: List<ActivityLogEntryDto>,
     loading: Boolean,
@@ -270,7 +269,6 @@ fun ParentSettingsDialog(
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
     var showChangePasswordDialog by remember { mutableStateOf(false) }
     var showGuide by remember { mutableStateOf(false) }
-    var showBlockedDomains by remember { mutableStateOf(false) }
     var showActivityLog by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -301,22 +299,6 @@ fun ParentSettingsDialog(
                 // butuh dialog Pengaturan ini tertutup seperti tur coach-mark.
                 OutlinedButton(onClick = { showGuide = true }) {
                     Text(stringResource(R.string.action_open_guide))
-                }
-
-                Spacer(Modifier.height(20.dp))
-                HorizontalDivider()
-                Spacer(Modifier.height(12.dp))
-                Text(stringResource(R.string.heading_content_control), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Text(
-                    stringResource(R.string.desc_content_control),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedButton(onClick = { showBlockedDomains = true }) {
-                    Icon(Icons.Default.Block, contentDescription = null)
-                    Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.action_manage_blocked_domains))
                 }
 
                 Spacer(Modifier.height(20.dp))
@@ -423,10 +405,6 @@ fun ParentSettingsDialog(
 
     if (showGuide) {
         GuideDialog(onDismiss = { showGuide = false })
-    }
-
-    if (showBlockedDomains) {
-        BlockedDomainsDialog(token = token, onDismiss = { showBlockedDomains = false })
     }
 
     if (showActivityLog) {
@@ -759,6 +737,22 @@ fun BackupIconButton(token: String, familyName: String?) {
         IconButton(onClick = onClick, enabled = !loading) {
             Icon(Icons.Default.CloudDownload, contentDescription = stringResource(R.string.action_download_backup_encrypted))
         }
+    }
+}
+
+/**
+ * Ikon pintasan "Kontrol Konten" (kelola Blokir Domain) di TopAppBar - dipisah dari ikon
+ * gerigi Pengaturan supaya jadi menu yang benar-benar berdiri sendiri, sama pola dengan
+ * BackupIconButton di atas (dulu dialog ini juga cuma bisa dibuka dari dalam Pengaturan).
+ */
+@Composable
+fun ContentControlIconButton(token: String) {
+    var showBlockedDomains by remember { mutableStateOf(false) }
+    IconButton(onClick = { showBlockedDomains = true }) {
+        Icon(Icons.Default.Block, contentDescription = stringResource(R.string.action_manage_blocked_domains))
+    }
+    if (showBlockedDomains) {
+        BlockedDomainsDialog(token = token, onDismiss = { showBlockedDomains = false })
     }
 }
 

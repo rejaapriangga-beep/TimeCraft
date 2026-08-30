@@ -50,6 +50,7 @@ import com.keluargakendali.ui.BackupIconButton
 import com.keluargakendali.ui.ChildScreen
 import com.keluargakendali.ui.ChildSettingsDialog
 import com.keluargakendali.ui.CoachMarkOverlay
+import com.keluargakendali.ui.ContentControlIconButton
 import com.keluargakendali.ui.ParentScreen
 import com.keluargakendali.ui.ParentSettingsDialog
 import com.keluargakendali.ui.PasswordField
@@ -187,6 +188,7 @@ private fun PactioApp() {
                                 Box(Modifier.tutorialTarget("topbar_backup", tutorialState)) {
                                     BackupIconButton(token = state.token!!, familyName = state.family?.name)
                                 }
+                                ContentControlIconButton(token = state.token!!)
                             }
                             // Pengaturan dipindah ke sini (bukan tab lagi - lihat ParentScreen/ChildScreen)
                             // supaya tab utama tetap muat satu baris tanpa digulir. Sengaja di sebelah
@@ -266,9 +268,8 @@ private fun PactioApp() {
 
         if (showSettings) {
             when (state.currentUser?.role) {
-                "parent" -> state.token?.let { token ->
+                "parent" -> state.token?.let {
                     ParentSettingsDialog(
-                        token = token,
                         children = state.children,
                         activityLog = state.activityLog,
                         loading = state.loading,
