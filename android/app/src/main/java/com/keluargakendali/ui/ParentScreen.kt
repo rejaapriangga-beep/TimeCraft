@@ -30,8 +30,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Delete
@@ -46,6 +48,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -88,11 +91,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.keluargakendali.R
 import com.keluargakendali.data.ActivityLogEntryDto
+import com.keluargakendali.data.BlockedDomainsDto
 import com.keluargakendali.data.ChatMessageDto
 import com.keluargakendali.data.EVIDENCE_MIME_EXT
 import com.keluargakendali.data.EvidenceFileDto
 import com.keluargakendali.data.FAMILY_CHAT_THREAD_ID
 import com.keluargakendali.data.PactioApi
+import com.keluargakendali.data.PresetCategoryDto
 import com.keluargakendali.data.SettingsStore
 import com.keluargakendali.data.TaskDto
 import com.keluargakendali.data.UserDto
@@ -247,6 +252,7 @@ fun ParentScreen(
  */
 @Composable
 fun ParentSettingsDialog(
+    token: String,
     children: List<UserDto>,
     activityLog: List<ActivityLogEntryDto>,
     loading: Boolean,
@@ -262,6 +268,7 @@ fun ParentSettingsDialog(
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
     var showChangePasswordDialog by remember { mutableStateOf(false) }
     var showGuide by remember { mutableStateOf(false) }
+    var showBlockedDomains by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -291,6 +298,22 @@ fun ParentSettingsDialog(
                 // butuh dialog Pengaturan ini tertutup seperti tur coach-mark.
                 OutlinedButton(onClick = { showGuide = true }) {
                     Text(stringResource(R.string.action_open_guide))
+                }
+
+                Spacer(Modifier.height(20.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(12.dp))
+                Text(stringResource(R.string.heading_content_control), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text(
+                    stringResource(R.string.desc_content_control),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(onClick = { showBlockedDomains = true }) {
+                    Icon(Icons.Default.Block, contentDescription = null)
+                    Spacer(Modifier.width(4.dp))
+                    Text(stringResource(R.string.action_manage_blocked_domains))
                 }
 
                 Spacer(Modifier.height(20.dp))
@@ -397,6 +420,10 @@ fun ParentSettingsDialog(
         GuideDialog(onDismiss = { showGuide = false })
     }
 
+    if (showBlockedDomains) {
+        BlockedDomainsDialog(token = token, onDismiss = { showBlockedDomains = false })
+    }
+
     val resetPinTarget = childPendingResetPin
     if (resetPinTarget != null) {
         ResetPinDialog(
@@ -425,6 +452,142 @@ fun ParentSettingsDialog(
             dismissButton = { TextButton(onClick = { childPendingDelete = null }) { Text(stringResource(R.string.action_cancel)) } }
         )
     }
+}
+
+/**
+ * Kelola daftar blokir domain/subdomain (family-wide) - dipanggil lewat PactioApi langsung
+ * (bukan lewat AppViewModel/UiState) sama seperti EvidenceFileThumbnail & dialog pratinjau
+ * lain di layar ini, supaya state global tidak perlu tahu detail dialog transient ini.
+ * Perubahan disinkronkan ke perangkat anak lewat DomainBlockVpnService (lihat catatan di sana)
+ * - efeknya TIDAK langsung seketika, anak perlu sinkron ulang dulu (polling berkala).
+ */
+@Composable
+private fun BlockedDomainsDialog(token: String, onDismiss: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    var loading by remember { mutableStateOf(true) }
+    var saving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var customDomains by remember { mutableStateOf(listOf<String>()) }
+    var presetCategories by remember { mutableStateOf(listOf<PresetCategoryDto>()) }
+    var selectedPresetKeys by remember { mutableStateOf(setOf<String>()) }
+    var newDomain by remember { mutableStateOf("") }
+
+    val errorLoadFailed = stringResource(R.string.error_load_blocked_domains_failed)
+    val errorSaveFailed = stringResource(R.string.error_save_blocked_domains_failed)
+
+    LaunchedEffect(Unit) {
+        runCatching { PactioApi.getBlockedDomains(token) }
+            .onSuccess { result: BlockedDomainsDto ->
+                customDomains = result.customDomains
+                presetCategories = result.presetCategories
+                selectedPresetKeys = result.presetKeys.toSet()
+            }
+            .onFailure { err -> error = err.message ?: errorLoadFailed }
+        loading = false
+    }
+
+    fun save() {
+        saving = true
+        scope.launch {
+            runCatching { PactioApi.setBlockedDomains(token, customDomains, selectedPresetKeys.toList()) }
+                .onSuccess { onDismiss() }
+                .onFailure { err -> error = err.message ?: errorSaveFailed }
+            saving = false
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.title_blocked_domains)) },
+        text = {
+            if (loading) {
+                Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    error?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                        Spacer(Modifier.height(8.dp))
+                    }
+
+                    Text(stringResource(R.string.heading_preset_categories), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                    if (presetCategories.isEmpty()) {
+                        Text(
+                            stringResource(R.string.empty_no_preset_categories),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        presetCategories.forEach { category ->
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Checkbox(
+                                    checked = selectedPresetKeys.contains(category.key),
+                                    onCheckedChange = { checked ->
+                                        selectedPresetKeys = if (checked) selectedPresetKeys + category.key else selectedPresetKeys - category.key
+                                    }
+                                )
+                                Text(category.label)
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(Modifier.height(12.dp))
+
+                    Text(stringResource(R.string.heading_custom_domains), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.desc_custom_domains),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = newDomain,
+                            onValueChange = { newDomain = it },
+                            placeholder = { Text(stringResource(R.string.placeholder_domain_example)) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        IconButton(onClick = {
+                            val trimmed = newDomain.trim()
+                            if (trimmed.isNotEmpty() && !customDomains.contains(trimmed)) customDomains = customDomains + trimmed
+                            newDomain = ""
+                        }) {
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.action_add_domain))
+                        }
+                    }
+                    if (customDomains.isEmpty()) {
+                        Text(
+                            stringResource(R.string.empty_no_custom_domains),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        customDomains.forEach { domain ->
+                            Row(
+                                Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(domain, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                IconButton(onClick = { customDomains = customDomains - domain }) {
+                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_remove_domain, domain))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { save() }, enabled = !loading && !saving) { Text(stringResource(R.string.action_save)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !saving) { Text(stringResource(R.string.action_cancel)) } }
+    )
 }
 
 /**

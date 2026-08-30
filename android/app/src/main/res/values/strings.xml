@@ -58,6 +58,7 @@
     <string name="activity_access_redeemed">Menukar saldo menit jadi waktu akses</string>
     <string name="activity_backup_created">Mengunduh backup terenkripsi</string>
     <string name="activity_password_changed">Mengubah kata sandi</string>
+    <string name="activity_blocked_domains_updated">Mengubah daftar blokir domain</string>
     <string name="role_parent_suffix">" (Orang Tua) "</string>
     <string name="role_child_suffix">" (Anak) "</string>
 
@@ -71,6 +72,22 @@
     <!-- ParentScreen.kt: ParentSettingsDialog -->
     <string name="heading_child_profiles">Profil Anak</string>
     <string name="desc_child_pin_encrypted">PIN anak disimpan terenkripsi dan tidak bisa ditampilkan ulang. Kalau anak lupa PIN, gunakan Reset PIN.</string>
+
+    <!-- ParentScreen.kt: BlockedDomainsDialog -->
+    <string name="heading_content_control">Kontrol Konten</string>
+    <string name="desc_content_control">Blokir domain/situs tertentu di HP anak lewat filter DNS lokal (tanpa root) - berlaku untuk semua anak di keluarga ini.</string>
+    <string name="action_manage_blocked_domains">Kelola Blokir Domain</string>
+    <string name="title_blocked_domains">Blokir Domain/Situs</string>
+    <string name="error_load_blocked_domains_failed">Gagal memuat daftar blokir domain.</string>
+    <string name="error_save_blocked_domains_failed">Gagal menyimpan daftar blokir domain.</string>
+    <string name="heading_preset_categories">Kategori Preset</string>
+    <string name="empty_no_preset_categories">Belum ada kategori preset tersedia.</string>
+    <string name="heading_custom_domains">Domain Custom</string>
+    <string name="desc_custom_domains">Subdomain otomatis ikut terblokir (mis. menambah \"contoh.com\" juga memblokir \"apa.contoh.com\").</string>
+    <string name="placeholder_domain_example">contoh.com</string>
+    <string name="action_add_domain">Tambah domain</string>
+    <string name="empty_no_custom_domains">Belum ada domain custom.</string>
+    <string name="action_remove_domain">Hapus %1$s</string>
     <string name="empty_no_children">Belum ada profil anak.</string>
     <string name="cd_reset_pin_for">Reset PIN %1$s</string>
     <string name="cd_delete_for">Hapus %1$s</string>

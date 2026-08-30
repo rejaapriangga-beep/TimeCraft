@@ -118,3 +118,29 @@ test("pendaftaran orang tua ditolak kalau Kebijakan Penggunaan belum disetujui",
   assert.equal(withTerms.status, 201);
   assert.ok(withTerms.body.token);
 });
+
+test("blokir domain: hanya orang tua yang bisa mengatur, anak cuma bisa baca, domain dinormalisasi & dedup", async () => {
+  const suffix = Date.now();
+  const registered = await request("/auth/register-parent", { method: "POST", body: JSON.stringify({ familyName: "Keluarga Blokir", name: "Ibu", email: `blokir${suffix}@contoh.id`, password: "rahasia-aman", acceptedTerms: true }) });
+  const parentAuth = { Authorization: `Bearer ${registered.body.token}` };
+  const child = await request("/family/children", { method: "POST", headers: parentAuth, body: JSON.stringify({ name: "Budi", pin: "1234" }) });
+  const childLogin = await request("/auth/login-child", { method: "POST", body: JSON.stringify({ familyCode: child.body.familyCode, pin: "1234" }) });
+  const childAuth = { Authorization: `Bearer ${childLogin.body.token}` };
+
+  // Anak tidak boleh mengubah daftar blokir.
+  const childTriesToSet = await request("/family/blocked-domains", { method: "POST", headers: childAuth, body: JSON.stringify({ customDomains: ["contoh.com"] }) });
+  assert.equal(childTriesToSet.status, 401);
+
+  // Domain dinormalisasi (protokol/www/path dibuang, huruf kecil) & duplikat dihapus.
+  const setResult = await request("/family/blocked-domains", {
+    method: "POST", headers: parentAuth,
+    body: JSON.stringify({ customDomains: ["https://Contoh.com/halaman", "www.contoh.com", "lain.id", "bukan domain valid"] })
+  });
+  assert.equal(setResult.status, 200);
+  assert.deepEqual(setResult.body.customDomains.sort(), ["contoh.com", "lain.id"]);
+
+  // Anak bisa baca daftar efektifnya (untuk sinkron VPN filter).
+  const childReads = await request("/family/blocked-domains", { headers: childAuth });
+  assert.equal(childReads.status, 200);
+  assert.deepEqual(childReads.body.effectiveDomains.sort(), ["contoh.com", "lain.id"]);
+});

@@ -173,6 +173,23 @@ object PactioApi {
         request("POST", "/report", token = token, body = body)
     }
 
+    /** Daftar blokir domain (family-wide) - dibaca baik orang tua (layar Pengaturan) maupun anak (DomainBlockVpnService sinkron berkala). */
+    suspend fun getBlockedDomains(token: String): BlockedDomainsDto {
+        val json = request("GET", "/family/blocked-domains", token = token, body = null)
+        return json.toBlockedDomainsDto()
+    }
+
+    /** Mengganti SELURUH daftar blokir domain (bukan tambah satu-satu) - HANYA orang tua, lihat server.js. */
+    suspend fun setBlockedDomains(token: String, customDomains: List<String>, presetKeys: List<String>): BlockedDomainsDto {
+        val customArray = org.json.JSONArray()
+        customDomains.forEach { customArray.put(it) }
+        val presetArray = org.json.JSONArray()
+        presetKeys.forEach { presetArray.put(it) }
+        val body = JSONObject().put("customDomains", customArray).put("presetKeys", presetArray)
+        val json = request("POST", "/family/blocked-domains", token = token, body = body)
+        return json.toBlockedDomainsDto()
+    }
+
     /** Log aktivitas keluarga - HANYA bisa dipanggil orang tua (backend menolak anak). Terbaru dulu. */
     suspend fun getActivityLog(token: String): List<ActivityLogEntryDto> {
         val json = request("GET", "/activity-log", token = token, body = null)
@@ -412,6 +429,24 @@ object PactioApi {
         tag = getString("tag"),
         ciphertext = getString("ciphertext")
     )
+
+    private fun JSONObject.toBlockedDomainsDto(): BlockedDomainsDto {
+        fun JSONObject.stringList(key: String): List<String> {
+            val array = getJSONArray(key)
+            return (0 until array.length()).map { array.getString(it) }
+        }
+        val categoriesArray = getJSONArray("presetCategories")
+        val categories = (0 until categoriesArray.length()).map {
+            val item = categoriesArray.getJSONObject(it)
+            PresetCategoryDto(key = item.getString("key"), label = item.getString("label"))
+        }
+        return BlockedDomainsDto(
+            customDomains = stringList("customDomains"),
+            presetKeys = stringList("presetKeys"),
+            effectiveDomains = stringList("effectiveDomains"),
+            presetCategories = categories
+        )
+    }
 
     private fun JSONObject.toActivityLogEntryDto() = ActivityLogEntryDto(
         id = getString("id"),

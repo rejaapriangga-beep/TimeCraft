@@ -51,6 +51,7 @@
     <string name="activity_access_redeemed">Redeemed minutes for screen time</string>
     <string name="activity_backup_created">Downloaded an encrypted backup</string>
     <string name="activity_password_changed">Changed password</string>
+    <string name="activity_blocked_domains_updated">Updated blocked domain list</string>
     <string name="role_parent_suffix">" (Parent) "</string>
     <string name="role_child_suffix">" (Child) "</string>
 
@@ -62,6 +63,21 @@
     <string name="tab_lock">Lock</string>
 
     <!-- ParentScreen.kt: ParentSettingsDialog -->
+    <string name="heading_content_control">Content Control</string>
+    <string name="desc_content_control">Block specific domains/sites on your child\'s phone via a local DNS filter (no root needed) - applies to every child in this family.</string>
+    <string name="action_manage_blocked_domains">Manage Blocked Domains</string>
+    <string name="title_blocked_domains">Blocked Domains/Sites</string>
+    <string name="error_load_blocked_domains_failed">Failed to load the blocked domain list.</string>
+    <string name="error_save_blocked_domains_failed">Failed to save the blocked domain list.</string>
+    <string name="heading_preset_categories">Preset Categories</string>
+    <string name="empty_no_preset_categories">No preset categories available yet.</string>
+    <string name="heading_custom_domains">Custom Domains</string>
+    <string name="desc_custom_domains">Subdomains are blocked automatically too (e.g. adding \"example.com\" also blocks \"sub.example.com\").</string>
+    <string name="placeholder_domain_example">example.com</string>
+    <string name="action_add_domain">Add domain</string>
+    <string name="empty_no_custom_domains">No custom domains yet.</string>
+    <string name="action_remove_domain">Remove %1$s</string>
+
     <string name="heading_child_profiles">Child Profiles</string>
     <string name="desc_child_pin_encrypted">A child\'s PIN is stored encrypted and can\'t be shown again. If your child forgets their PIN, use Reset PIN.</string>
     <string name="empty_no_children">No child profiles yet.</string>

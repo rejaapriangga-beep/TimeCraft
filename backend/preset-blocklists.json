@@ -1,0 +1,5 @@
+{
+  "_readme": "Daftar domain per kategori preset blokir (lihat PRESET_CATEGORIES di server.js). Isi array di bawah dengan domain yang relevan untuk tiap kategori (satu domain per entri, tanpa 'https://' atau path, mis. 'contoh-situs-judi.com') - subdomain otomatis ikut terblokir. Kunci yang diawali garis bawah (seperti kunci ini) diabaikan server, aman dipakai untuk catatan.",
+  "judi_online": [],
+  "konten_dewasa": []
+}

@@ -266,19 +266,22 @@ private fun PactioApp() {
 
         if (showSettings) {
             when (state.currentUser?.role) {
-                "parent" -> ParentSettingsDialog(
-                    children = state.children,
-                    activityLog = state.activityLog,
-                    loading = state.loading,
-                    onDeleteChild = viewModel::deleteChild,
-                    onResetPin = viewModel::resetChildPin,
-                    onDeleteAccount = { password, onWrongPassword -> viewModel.deleteAccount(password, onWrongPassword) },
-                    onChangePassword = { currentPassword, newPassword, onSuccess, onError ->
-                        viewModel.changePassword(currentPassword, newPassword, onSuccess, onError)
-                    },
-                    onReplayTutorial = { tutorialState.start(parentTutorialSteps) },
-                    onDismiss = { showSettings = false }
-                )
+                "parent" -> state.token?.let { token ->
+                    ParentSettingsDialog(
+                        token = token,
+                        children = state.children,
+                        activityLog = state.activityLog,
+                        loading = state.loading,
+                        onDeleteChild = viewModel::deleteChild,
+                        onResetPin = viewModel::resetChildPin,
+                        onDeleteAccount = { password, onWrongPassword -> viewModel.deleteAccount(password, onWrongPassword) },
+                        onChangePassword = { currentPassword, newPassword, onSuccess, onError ->
+                            viewModel.changePassword(currentPassword, newPassword, onSuccess, onError)
+                        },
+                        onReplayTutorial = { tutorialState.start(parentTutorialSteps) },
+                        onDismiss = { showSettings = false }
+                    )
+                }
                 "child" -> ChildSettingsDialog(state = state, onDismiss = { showSettings = false })
             }
         }

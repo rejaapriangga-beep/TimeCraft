@@ -6,6 +6,44 @@ const path = require("path");
 
 const PORT = Number(process.env.PORT || 3030);
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, "data.json");
+
+// --- Blokir domain/subdomain (fitur kontrol konten jaringan) --------------------------
+// Daftar domain yang orang tua blokir di HP anak lewat filter DNS lokal (lihat
+// DomainBlockVpnService di Android - VPN lokal tanpa root, cuma menyaring query DNS, TIDAK
+// mendekripsi/membaca isi trafik HTTPS). Family-wide (satu daftar untuk semua anak), bukan
+// per-anak - lihat family.blockedDomains & family.blockedPresetKeys.
+const MAX_BLOCKED_DOMAINS = 500;
+const PRESET_BLOCKLIST_FILE = path.join(__dirname, "preset-blocklists.json");
+// Kategori preset siap-centang. PENTING: isi domain per kategori di preset-blocklists.json
+// SENGAJA TIDAK dikarang di sini - operator aplikasi yang mengisi/memelihara daftar domain
+// judi online & konten dewasa yang relevan (mis. disalin dari proyek blocklist publik yang
+// dikelola komunitas seperti StevenBlack/hosts, atau sumber tepercaya lain pilihan Anda),
+// karena daftar semacam ini cepat basi dan kualitasnya harus terus dijaga manusia yang
+// bertanggung jawab, bukan sekali ditulis lalu dilupakan.
+const PRESET_CATEGORIES = [
+  { key: "judi_online", label: "Situs Judi Online" },
+  { key: "konten_dewasa", label: "Konten Dewasa" }
+];
+function normalizeDomain(raw) {
+  if (typeof raw !== "string") return null;
+  let value = raw.trim().toLowerCase();
+  value = value.replace(/^[a-z]+:\/\//, "").replace(/\/.*$/, "").replace(/:\d+$/, "");
+  value = value.replace(/^www\./, "");
+  if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/.test(value)) return null;
+  return value;
+}
+function loadPresetBlocklists() {
+  const empty = Object.fromEntries(PRESET_CATEGORIES.map(({ key }) => [key, []]));
+  try {
+    const raw = JSON.parse(fs.readFileSync(PRESET_BLOCKLIST_FILE, "utf8"));
+    for (const { key } of PRESET_CATEGORIES) {
+      empty[key] = Array.isArray(raw[key]) ? Array.from(new Set(raw[key].map(normalizeDomain).filter(Boolean))) : [];
+    }
+  } catch (error) {
+    // Berkas belum ada/rusak - aman diabaikan, kategori preset cuma kosong (bukan dianggap error).
+  }
+  return empty;
+}
 // Berkas bukti tugas (foto/dokumen) disimpan sebagai file biasa (bukan di data.json) supaya
 // JSON db tidak membengkak. Ditaruh di folder yang sama dengan DATA_FILE, jadi otomatis ikut
 // ke volume Docker yang sama (lihat docker-compose.yml) tanpa perlu konfigurasi tambahan.
@@ -888,6 +926,42 @@ async function route(req, res) {
     const family = familyFor(user);
     const children = db.users.filter((item) => item.familyId === user.familyId && item.role === "child").map(publicUser);
     return send(res, 200, { family: { id: family.id, name: family.name, code: user.role === "parent" ? family.code : undefined }, children });
+  }
+
+  // Dibaca baik oleh orang tua (layar Pengaturan) maupun anak (DomainBlockVpnService sinkron
+  // daftar blokir secara berkala) - effectiveDomains sudah gabungan customDomains + domain dari
+  // semua preset yang dicentang, siap dipakai langsung sebagai daftar blokir DNS di Android.
+  if (req.method === "GET" && pathname === "/family/blocked-domains") {
+    const user = auth(req, res); if (!user) return;
+    const family = familyFor(user);
+    const customDomains = Array.isArray(family.blockedDomains) ? family.blockedDomains : [];
+    const presetKeys = Array.isArray(family.blockedPresetKeys) ? family.blockedPresetKeys : [];
+    const presets = loadPresetBlocklists();
+    const effectiveDomains = Array.from(new Set([...customDomains, ...presetKeys.flatMap((key) => presets[key] || [])]));
+    return send(res, 200, { customDomains, presetKeys, effectiveDomains, presetCategories: PRESET_CATEGORIES });
+  }
+
+  // Orang tua mengganti SELURUH daftar (bukan tambah satu-satu) - lebih sederhana untuk klien
+  // (kirim state penuh dari layar Pengaturan) dan menghindari race condition antar device.
+  if (req.method === "POST" && pathname === "/family/blocked-domains") {
+    const parent = auth(req, res, ["parent"]); if (!parent) return;
+    const family = familyFor(parent);
+    const body = await bodyOf(req);
+    const rawDomains = Array.isArray(body.customDomains) ? body.customDomains : [];
+    const customDomains = Array.from(new Set(rawDomains.map(normalizeDomain).filter(Boolean)));
+    if (customDomains.length > MAX_BLOCKED_DOMAINS) {
+      return send(res, 400, { error: `Maksimal ${MAX_BLOCKED_DOMAINS} domain custom.` });
+    }
+    const validKeys = new Set(PRESET_CATEGORIES.map((item) => item.key));
+    const presetKeys = Array.isArray(body.presetKeys) ? Array.from(new Set(body.presetKeys.filter((key) => validKeys.has(key)))) : [];
+    family.blockedDomains = customDomains;
+    family.blockedPresetKeys = presetKeys;
+    logActivity(parent, "blocked_domains_updated", `${customDomains.length} domain custom, ${presetKeys.length} kategori preset`); save();
+    // Bentuk respons SAMA seperti GET (bukan cuma echo customDomains/presetKeys) supaya klien
+    // Android bisa langsung pakai hasilnya tanpa perlu GET ulang setelah menyimpan.
+    const presets = loadPresetBlocklists();
+    const effectiveDomains = Array.from(new Set([...customDomains, ...presetKeys.flatMap((key) => presets[key] || [])]));
+    return send(res, 200, { customDomains, presetKeys, effectiveDomains, presetCategories: PRESET_CATEGORIES });
   }
 
   // Ubah kata sandi orang tua (self-service dari menu Pengaturan) - wajib konfirmasi kata

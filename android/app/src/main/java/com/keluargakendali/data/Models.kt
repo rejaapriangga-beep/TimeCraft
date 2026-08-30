@@ -166,6 +166,21 @@ data class ActivityLogEntryDto(
     val createdAt: String
 )
 
+/** Satu kategori preset blokir domain siap-centang (mis. "Situs Judi Online") - lihat PRESET_CATEGORIES di server.js. */
+data class PresetCategoryDto(val key: String, val label: String)
+
+/**
+ * Daftar blokir domain family-wide (lihat GET/POST /family/blocked-domains di server.js).
+ * effectiveDomains = customDomains + domain dari semua presetKeys yang dicentang, sudah gabung &
+ * siap dipakai langsung sebagai daftar blokir DNS oleh DomainBlockVpnService di perangkat anak.
+ */
+data class BlockedDomainsDto(
+    val customDomains: List<String>,
+    val presetKeys: List<String>,
+    val effectiveDomains: List<String>,
+    val presetCategories: List<PresetCategoryDto>
+)
+
 /**
  * Label untuk tiap kode `action`, mengikuti bahasa aktif (lihat strings.xml/values-en) - HARUS
  * tetap sinkron secara MAKNA dengan ACTIVITY_ACTION_LABEL di web/app.js (web belum ada versi
@@ -186,5 +201,6 @@ fun activityActionLabel(action: String): String = when (action) {
     "access_redeemed" -> stringResource(R.string.activity_access_redeemed)
     "backup_created" -> stringResource(R.string.activity_backup_created)
     "password_changed" -> stringResource(R.string.activity_password_changed)
+    "blocked_domains_updated" -> stringResource(R.string.activity_blocked_domains_updated)
     else -> action
 }
