@@ -254,6 +254,7 @@ private fun ChildDashboardTab(state: UiState, onGunakanWaktu: () -> Unit) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        ChildProfileCard(name = state.currentUser?.name ?: "", familyName = state.family?.name)
         AccessBalanceCard(
             balanceMinutes = state.balanceMinutes,
             approvedTaskCount = state.approvedTaskCount,
@@ -279,6 +280,42 @@ private fun ChildDashboardTab(state: UiState, onGunakanWaktu: () -> Unit) {
         val incomplete = state.tasks.filter { it.status != "approved" }
         ChildIncompleteTasksCard(incomplete)
         DashboardChatPreviewCard(messages = state.dashboardChatPreview, currentUserId = state.currentUser?.id, children = state.children)
+    }
+}
+
+/**
+ * Kartu profil anak di puncak Dashboard - supaya begitu buka aplikasi, anak langsung tahu akun
+ * siapa yang sedang login (berguna kalau satu HP dipakai bergantian oleh lebih dari satu anak
+ * di keluarga yang sama). Cuma tampilan, tidak ada aksi apa pun di kartu ini.
+ */
+@Composable
+private fun ChildProfileCard(name: String, familyName: String?) {
+    Card(shape = RoundedCornerShape(18.dp)) {
+        Row(
+            Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    if (familyName != null) stringResource(R.string.label_child_of_family, familyName) else stringResource(R.string.label_account_role_child),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }
 

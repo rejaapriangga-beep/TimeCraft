@@ -41,8 +41,10 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -269,6 +271,7 @@ fun ParentSettingsDialog(
     var showChangePasswordDialog by remember { mutableStateOf(false) }
     var showGuide by remember { mutableStateOf(false) }
     var showBlockedDomains by remember { mutableStateOf(false) }
+    var showActivityLog by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -359,14 +362,16 @@ fun ParentSettingsDialog(
                 HorizontalDivider()
                 Spacer(Modifier.height(12.dp))
                 Text(stringResource(R.string.heading_activity_log), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                if (activityLog.isEmpty()) {
-                    Text(
-                        stringResource(R.string.empty_no_activity),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    activityLog.forEach { entry -> ActivityLogRow(entry) }
+                Text(
+                    stringResource(R.string.desc_activity_log_menu),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(onClick = { showActivityLog = true }) {
+                    Icon(Icons.Default.History, contentDescription = null)
+                    Spacer(Modifier.width(4.dp))
+                    Text(stringResource(R.string.action_view_activity_log))
                 }
 
                 Spacer(Modifier.height(20.dp))
@@ -424,6 +429,10 @@ fun ParentSettingsDialog(
         BlockedDomainsDialog(token = token, onDismiss = { showBlockedDomains = false })
     }
 
+    if (showActivityLog) {
+        ActivityLogDialog(activityLog = activityLog, onDismiss = { showActivityLog = false })
+    }
+
     val resetPinTarget = childPendingResetPin
     if (resetPinTarget != null) {
         ResetPinDialog(
@@ -455,6 +464,70 @@ fun ParentSettingsDialog(
 }
 
 /**
+ * Menu tersendiri untuk Log Aktivitas - dipisah dari isi utama Pengaturan (dulu ikut digulir
+ * panjang di sana) supaya lebih mudah dibaca, ditambah filter pelaku & jenis aksi. Pilihan
+ * filter dihitung dinamis dari activityLog yang ada (bukan daftar tetap) supaya tidak menampilkan
+ * opsi yang memang belum pernah terjadi di keluarga ini.
+ */
+@Composable
+private fun ActivityLogDialog(activityLog: List<ActivityLogEntryDto>, onDismiss: () -> Unit) {
+    var actorFilter by remember { mutableStateOf<String?>(null) }
+    var actionFilter by remember { mutableStateOf<String?>(null) }
+
+    val actors = remember(activityLog) { activityLog.map { it.actorId to it.actorName }.distinctBy { it.first } }
+    val actions = remember(activityLog) { activityLog.map { it.action }.distinct() }
+    val filtered = activityLog.filter { entry ->
+        (actorFilter == null || entry.actorId == actorFilter) && (actionFilter == null || entry.action == actionFilter)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.heading_activity_log)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                if (activityLog.isEmpty()) {
+                    Text(
+                        stringResource(R.string.empty_no_activity),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    val allActorsLabel = stringResource(R.string.label_all_actors)
+                    val allActionsLabel = stringResource(R.string.label_all_actions)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterDropdown(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(R.string.label_actor),
+                            selectedLabel = actors.find { it.first == actorFilter }?.second ?: allActorsLabel,
+                            options = listOf<Pair<String?, String>>(null to allActorsLabel) + actors.map { it.first to it.second },
+                            onSelect = { actorFilter = it }
+                        )
+                        FilterDropdown(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(R.string.label_action_type),
+                            selectedLabel = actionFilter?.let { activityActionLabel(it) } ?: allActionsLabel,
+                            options = listOf<Pair<String?, String>>(null to allActionsLabel) + actions.map { it to activityActionLabel(it) },
+                            onSelect = { actionFilter = it }
+                        )
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    if (filtered.isEmpty()) {
+                        Text(
+                            stringResource(R.string.empty_no_activity_filtered),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        filtered.forEach { entry -> ActivityLogRow(entry) }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) } }
+    )
+}
+
+/**
  * Kelola daftar blokir domain/subdomain (family-wide) - dipanggil lewat PactioApi langsung
  * (bukan lewat AppViewModel/UiState) sama seperti EvidenceFileThumbnail & dialog pratinjau
  * lain di layar ini, supaya state global tidak perlu tahu detail dialog transient ini.
@@ -471,6 +544,7 @@ private fun BlockedDomainsDialog(token: String, onDismiss: () -> Unit) {
     var presetCategories by remember { mutableStateOf(listOf<PresetCategoryDto>()) }
     var selectedPresetKeys by remember { mutableStateOf(setOf<String>()) }
     var newDomain by remember { mutableStateOf("") }
+    var domainSearch by remember { mutableStateOf("") }
 
     val errorLoadFailed = stringResource(R.string.error_load_blocked_domains_failed)
     val errorSaveFailed = stringResource(R.string.error_save_blocked_domains_failed)
@@ -560,14 +634,36 @@ private fun BlockedDomainsDialog(token: String, onDismiss: () -> Unit) {
                             Icon(Icons.Default.Add, contentDescription = stringResource(R.string.action_add_domain))
                         }
                     }
+                    if (customDomains.size > 5) {
+                        Spacer(Modifier.height(6.dp))
+                        OutlinedTextField(
+                            value = domainSearch,
+                            onValueChange = { domainSearch = it },
+                            placeholder = { Text(stringResource(R.string.hint_search_domain)) },
+                            singleLine = true,
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    val filteredCustomDomains = if (domainSearch.isBlank()) {
+                        customDomains
+                    } else {
+                        customDomains.filter { it.contains(domainSearch.trim(), ignoreCase = true) }
+                    }
                     if (customDomains.isEmpty()) {
                         Text(
                             stringResource(R.string.empty_no_custom_domains),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    } else if (filteredCustomDomains.isEmpty()) {
+                        Text(
+                            stringResource(R.string.empty_no_domains_match_search),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     } else {
-                        customDomains.forEach { domain ->
+                        filteredCustomDomains.forEach { domain ->
                             Row(
                                 Modifier.fillMaxWidth().padding(vertical = 2.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,

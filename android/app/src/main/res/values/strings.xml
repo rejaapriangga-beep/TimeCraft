@@ -91,13 +91,22 @@
     <string name="placeholder_domain_example">contoh.com</string>
     <string name="action_add_domain">Tambah domain</string>
     <string name="empty_no_custom_domains">Belum ada domain custom.</string>
+    <string name="hint_search_domain">Cari domain…</string>
+    <string name="empty_no_domains_match_search">Tidak ada domain yang cocok dengan pencarian.</string>
     <string name="action_remove_domain">Hapus %1$s</string>
     <string name="empty_no_children">Belum ada profil anak.</string>
     <string name="cd_reset_pin_for">Reset PIN %1$s</string>
     <string name="cd_delete_for">Hapus %1$s</string>
     <string name="hint_add_child_moved">Tambah profil anak baru sekarang ada di tab Kunci Perangkat.</string>
     <string name="heading_activity_log">Log Aktivitas</string>
+    <string name="desc_activity_log_menu">Riwayat transparan semua tindakan orang tua &amp; anak di keluarga ini, di menu tersendiri supaya lebih mudah difilter.</string>
+    <string name="action_view_activity_log">Lihat Log Aktivitas</string>
     <string name="empty_no_activity">Belum ada aktivitas tercatat.</string>
+    <string name="empty_no_activity_filtered">Tidak ada aktivitas yang cocok dengan filter ini.</string>
+    <string name="label_all_actors">Semua Orang</string>
+    <string name="label_all_actions">Semua Jenis Aksi</string>
+    <string name="label_actor">Pelaku</string>
+    <string name="label_action_type">Jenis Aksi</string>
     <string name="title_delete_child_confirm">Hapus profil %1$s?</string>
     <string name="body_delete_child_confirm">Semua tugas, riwayat chat, dan foto bukti miliknya akan ikut terhapus, dan perangkat anak ini akan otomatis keluar. Tindakan ini tidak bisa dibatalkan.</string>
     <string name="action_delete">Hapus</string>
@@ -268,6 +277,8 @@
     <string name="label_reward_minutes_field">Hadiah (menit, 1-240)</string>
 
     <!-- ChildScreen.kt -->
+    <string name="label_child_of_family">Keluarga %1$s</string>
+    <string name="label_account_role_child">Akun Anak</string>
     <string name="stat_not_submitted">Belum Dikirim</string>
     <string name="empty_all_tasks_done_child">Semua tugas sudah selesai. Mantap!</string>
     <string name="empty_no_tasks_from_parent">Belum ada tugas dari orang tua.</string>

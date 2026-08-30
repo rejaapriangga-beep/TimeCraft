@@ -80,6 +80,8 @@
     <string name="placeholder_domain_example">example.com</string>
     <string name="action_add_domain">Add domain</string>
     <string name="empty_no_custom_domains">No custom domains yet.</string>
+    <string name="hint_search_domain">Search domain…</string>
+    <string name="empty_no_domains_match_search">No domains match this search.</string>
     <string name="action_remove_domain">Remove %1$s</string>
 
     <string name="heading_child_profiles">Child Profiles</string>
@@ -89,7 +91,14 @@
     <string name="cd_delete_for">Delete %1$s</string>
     <string name="hint_add_child_moved">Adding a new child profile is now under the Device Lock tab.</string>
     <string name="heading_activity_log">Activity Log</string>
+    <string name="desc_activity_log_menu">A transparent history of every parent &amp; child action in this family, moved to its own menu so it\'s easier to filter.</string>
+    <string name="action_view_activity_log">View Activity Log</string>
     <string name="empty_no_activity">No activity recorded yet.</string>
+    <string name="empty_no_activity_filtered">No activity matches this filter.</string>
+    <string name="label_all_actors">Everyone</string>
+    <string name="label_all_actions">All Action Types</string>
+    <string name="label_actor">Actor</string>
+    <string name="label_action_type">Action Type</string>
     <string name="title_delete_child_confirm">Delete %1$s\'s profile?</string>
     <string name="body_delete_child_confirm">All of their tasks, chat history, and evidence photos will be deleted too, and this child\'s device will be signed out automatically. This can\'t be undone.</string>
     <string name="action_delete">Delete</string>
@@ -258,6 +267,8 @@
     <string name="label_reward_minutes_field">Reward (minutes, 1-240)</string>
 
     <!-- ChildScreen.kt -->
+    <string name="label_child_of_family">%1$s Family</string>
+    <string name="label_account_role_child">Child Account</string>
     <string name="stat_not_submitted">Not Submitted</string>
     <string name="empty_all_tasks_done_child">All tasks are done. Nice work!</string>
     <string name="empty_no_tasks_from_parent">No tasks from your parent yet.</string>
