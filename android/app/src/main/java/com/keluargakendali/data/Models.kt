@@ -15,7 +15,14 @@ data class UserDto(
     val name: String,
     val familyId: String,
     // Hanya berarti untuk role "child" - backend selalu mengirim false/tidak ada untuk orang tua.
-    val lockModeEnabled: Boolean = false
+    val lockModeEnabled: Boolean = false,
+    // Status IZIN SISTEM sesungguhnya di HP anak (lihat POST /children/permission-status di
+    // server.js & pelaporannya di ChildScreen.kt/DomainBlockVpnService.kt) - null berarti belum
+    // pernah dilaporkan sama sekali, BEDA dari false (sudah pernah aktif lalu dicabut). Cuma
+    // berarti untuk role "child".
+    val overlayPermissionGranted: Boolean? = null,
+    val vpnPermissionGranted: Boolean? = null,
+    val permissionStatusAt: String? = null
 )
 
 data class FamilyDto(
@@ -201,6 +208,10 @@ fun activityActionLabel(action: String): String = when (action) {
     "access_redeemed" -> stringResource(R.string.activity_access_redeemed)
     "backup_created" -> stringResource(R.string.activity_backup_created)
     "password_changed" -> stringResource(R.string.activity_password_changed)
+    "overlay_permission_granted" -> stringResource(R.string.activity_overlay_permission_granted)
+    "overlay_permission_revoked" -> stringResource(R.string.activity_overlay_permission_revoked)
+    "vpn_permission_granted" -> stringResource(R.string.activity_vpn_permission_granted)
+    "vpn_permission_revoked" -> stringResource(R.string.activity_vpn_permission_revoked)
     "blocked_domains_updated" -> stringResource(R.string.activity_blocked_domains_updated)
     else -> action
 }

@@ -144,3 +144,34 @@ test("blokir domain: hanya orang tua yang bisa mengatur, anak cuma bisa baca, do
   assert.equal(childReads.status, 200);
   assert.deepEqual(childReads.body.effectiveDomains.sort(), ["contoh.com", "lain.id"]);
 });
+
+test("status izin perangkat anak: dilaporkan sendiri, terlihat orang tua, tercatat di log saat berubah", async () => {
+  const suffix = Date.now();
+  const registered = await request("/auth/register-parent", { method: "POST", body: JSON.stringify({ familyName: "Keluarga Izin", name: "Ibu", email: `izin${suffix}@contoh.id`, password: "rahasia-aman", acceptedTerms: true }) });
+  const parentAuth = { Authorization: `Bearer ${registered.body.token}` };
+  const child = await request("/family/children", { method: "POST", headers: parentAuth, body: JSON.stringify({ name: "Budi", pin: "1234" }) });
+  const childLogin = await request("/auth/login-child", { method: "POST", body: JSON.stringify({ familyCode: child.body.familyCode, pin: "1234" }) });
+  const childAuth = { Authorization: `Bearer ${childLogin.body.token}` };
+
+  // Sebelum pernah lapor, status undefined (bukan false) - orang tua bisa bedakan dari "sudah dicabut".
+  const beforeReport = await request("/family", { headers: parentAuth });
+  const childBefore = beforeReport.body.children.find((item) => item.id === child.body.child.id);
+  assert.equal(childBefore.overlayPermissionGranted, undefined);
+  assert.equal(childBefore.vpnPermissionGranted, undefined);
+
+  // Laporan pertama: true/true - TIDAK dicatat sebagai "dicabut" di log (belum ada status sebelumnya untuk dibandingkan).
+  const firstReport = await request("/children/permission-status", { method: "POST", headers: childAuth, body: JSON.stringify({ overlayGranted: true, vpnGranted: true }) });
+  assert.equal(firstReport.status, 200);
+  const logAfterFirst = await request("/activity-log", { headers: parentAuth });
+  assert.ok(!logAfterFirst.body.entries.some((entry) => entry.action.includes("permission")));
+
+  // Anak mencabut izin VPN - status terbaru terlihat orang tua & tercatat di log aktivitas.
+  const secondReport = await request("/children/permission-status", { method: "POST", headers: childAuth, body: JSON.stringify({ overlayGranted: true, vpnGranted: false }) });
+  assert.equal(secondReport.status, 200);
+  const afterRevoke = await request("/family", { headers: parentAuth });
+  const childAfter = afterRevoke.body.children.find((item) => item.id === child.body.child.id);
+  assert.equal(childAfter.overlayPermissionGranted, true);
+  assert.equal(childAfter.vpnPermissionGranted, false);
+  const logAfterRevoke = await request("/activity-log", { headers: parentAuth });
+  assert.ok(logAfterRevoke.body.entries.some((entry) => entry.action === "vpn_permission_revoked"));
+});

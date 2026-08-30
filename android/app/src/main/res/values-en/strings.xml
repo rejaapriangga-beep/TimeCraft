@@ -52,6 +52,10 @@
     <string name="activity_backup_created">Downloaded an encrypted backup</string>
     <string name="activity_password_changed">Changed password</string>
     <string name="activity_blocked_domains_updated">Updated blocked domain list</string>
+    <string name="activity_overlay_permission_granted">Device Lock permission active on child\'s phone</string>
+    <string name="activity_overlay_permission_revoked">Device Lock permission revoked on child\'s phone</string>
+    <string name="activity_vpn_permission_granted">Domain Block permission active on child\'s phone</string>
+    <string name="activity_vpn_permission_revoked">Domain Block permission revoked on child\'s phone</string>
     <string name="role_parent_suffix">" (Parent) "</string>
     <string name="role_child_suffix">" (Child) "</string>
 
@@ -216,6 +220,11 @@
     <string name="count_locked_of_total">%1$d of %2$d children locked</string>
     <string name="label_child_singular">Child</string>
     <string name="label_device_of_child">%1$s\'s Device</string>
+    <string name="label_permission_lock">Device Lock permission</string>
+    <string name="label_permission_domain_block">Domain Block permission</string>
+    <string name="status_permission_active">Active</string>
+    <string name="status_permission_revoked">Revoked by child</string>
+    <string name="status_permission_unknown">Unknown</string>
 
     <!-- ParentScreen.kt: Kunci, WaitingTaskCard, dokumen bukti -->
     <string name="action_add_child">+ Add Child</string>

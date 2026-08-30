@@ -96,8 +96,23 @@ class DomainBlockVpnService : VpnService() {
      * Dipanggil sistem kalau pengguna mencabut izin VPN lewat Pengaturan, atau aplikasi VPN
      * lain diaktifkan (cuma boleh 1 VPN aktif per waktu di Android) - berhenti bersih, JANGAN
      * coba membangun ulang tunnel secara paksa.
+     *
+     * Sekalian lapor ke server SEBELUM stopSelf() - ini sinyal PALING andal untuk "izin VPN
+     * dicabut" (beda dari polling di ChildScreen.kt yang cuma jalan kalau proses aplikasi masih
+     * hidup) karena callback sistem ini terpanggil persis saat pencabutan terjadi, tanpa perlu
+     * app TimeCraft sedang dibuka. Best-effort (fire-and-forget) - kalau gagal terkirim (mis.
+     * tidak ada jaringan), tetap lanjut stopSelf(), laporan berikutnya dari ChildScreen.kt yang
+     * akan menyusulkan status ini kalau app dibuka lagi.
      */
     override fun onRevoke() {
+        val tokenStore = SecureTokenStore(applicationContext)
+        val hasOverlay = DeviceLockPermissions.hasOverlayPermission(applicationContext)
+        scope.launch {
+            val token = tokenStore.loadToken()
+            if (token != null) {
+                runCatching { PactioApi.reportPermissionStatus(token, hasOverlay, false) }
+            }
+        }
         stopSelf()
         super.onRevoke()
     }

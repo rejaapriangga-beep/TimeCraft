@@ -166,6 +166,17 @@ object PactioApi {
         request("POST", "/chat/$childId/read", token = token, body = JSONObject())
     }
 
+    /**
+     * Dipanggil HANYA dari perangkat anak - melaporkan status IZIN SISTEM sesungguhnya (overlay
+     * untuk Mode Kunci, VPN untuk Blokir Domain) ke server, supaya orang tua bisa lihat kalau
+     * anak mencabutnya sendiri lewat Pengaturan sistem (lihat ChildScreen.kt/
+     * DomainBlockVpnService.kt pemanggilnya, dan POST /children/permission-status di server.js).
+     */
+    suspend fun reportPermissionStatus(token: String, overlayGranted: Boolean, vpnGranted: Boolean) {
+        val body = JSONObject().put("overlayGranted", overlayGranted).put("vpnGranted", vpnGranted)
+        request("POST", "/children/permission-status", token = token, body = body)
+    }
+
     /** Lapor pesan chat tertentu (atau laporan umum kalau targetMessageId null) ke operator aplikasi - lihat POST /report di server.js & TERMS.html. */
     suspend fun reportMessage(token: String, threadKey: String, targetMessageId: String?, reason: String) {
         val body = JSONObject().put("reason", reason).put("threadKey", threadKey)
@@ -373,7 +384,10 @@ object PactioApi {
         role = getString("role"),
         name = getString("name"),
         familyId = getString("familyId"),
-        lockModeEnabled = optBoolean("lockModeEnabled", false)
+        lockModeEnabled = optBoolean("lockModeEnabled", false),
+        overlayPermissionGranted = if (has("overlayPermissionGranted") && !isNull("overlayPermissionGranted")) getBoolean("overlayPermissionGranted") else null,
+        vpnPermissionGranted = if (has("vpnPermissionGranted") && !isNull("vpnPermissionGranted")) getBoolean("vpnPermissionGranted") else null,
+        permissionStatusAt = if (has("permissionStatusAt") && !isNull("permissionStatusAt")) getString("permissionStatusAt") else null
     )
 
     private fun JSONObject.toFamilyDto() = FamilyDto(

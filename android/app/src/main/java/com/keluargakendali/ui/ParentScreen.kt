@@ -1418,29 +1418,40 @@ private fun ParentLockTab(
             LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(children, key = { it.id }) { child ->
                     Card {
-                        Row(
-                            Modifier.fillMaxWidth().padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(stringResource(R.string.label_device_of_child, child.name), fontWeight = FontWeight.SemiBold)
-                            Switch(
-                                checked = child.lockModeEnabled,
-                                onCheckedChange = { onSetLock(child.id, it) },
-                                enabled = !loading,
-                                // Merah (bukan warna aksen oranye standar) saat TERKUNCI - kontras
-                                // lebih tinggi & lebih jelas maknanya ("terkunci/dibatasi"), sama
-                                // dengan perubahan warna toggle di web/app.css.
-                                colors = SwitchDefaults.colors(
-                                    checkedTrackColor = MaterialTheme.colorScheme.error,
-                                    checkedThumbColor = MaterialTheme.colorScheme.onError,
-                                    // Track "off" bawaan (outline pucat, sama dengan garis tepi kartu)
-                                    // nyaris tidak kelihatan di atas latar - lihat pactioExtraColors.switchTrackOff.
-                                    uncheckedTrackColor = MaterialTheme.pactioExtraColors.switchTrackOff,
-                                    uncheckedBorderColor = MaterialTheme.pactioExtraColors.switchTrackOff,
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.surface
+                        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(stringResource(R.string.label_device_of_child, child.name), fontWeight = FontWeight.SemiBold)
+                                Switch(
+                                    checked = child.lockModeEnabled,
+                                    onCheckedChange = { onSetLock(child.id, it) },
+                                    enabled = !loading,
+                                    // Merah (bukan warna aksen oranye standar) saat TERKUNCI - kontras
+                                    // lebih tinggi & lebih jelas maknanya ("terkunci/dibatasi"), sama
+                                    // dengan perubahan warna toggle di web/app.css.
+                                    colors = SwitchDefaults.colors(
+                                        checkedTrackColor = MaterialTheme.colorScheme.error,
+                                        checkedThumbColor = MaterialTheme.colorScheme.onError,
+                                        // Track "off" bawaan (outline pucat, sama dengan garis tepi kartu)
+                                        // nyaris tidak kelihatan di atas latar - lihat pactioExtraColors.switchTrackOff.
+                                        uncheckedTrackColor = MaterialTheme.pactioExtraColors.switchTrackOff,
+                                        uncheckedBorderColor = MaterialTheme.pactioExtraColors.switchTrackOff,
+                                        uncheckedThumbColor = MaterialTheme.colorScheme.surface
+                                    )
                                 )
-                            )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            // Status IZIN SISTEM sesungguhnya di HP anak (dilaporkan sendiri lewat
+                            // POST /children/permission-status) - BEDA dari toggle di atas yang cuma
+                            // niat orang tua. Ini yang membuat pencabutan izin oleh anak (lihat
+                            // diskusi desain) TERLIHAT, bukan cuma mencegahnya.
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                PermissionStatusLabel(stringResource(R.string.label_permission_lock), child.overlayPermissionGranted)
+                                PermissionStatusLabel(stringResource(R.string.label_permission_domain_block), child.vpnPermissionGranted)
+                            }
                         }
                     }
                 }
@@ -1460,6 +1471,21 @@ private fun ParentLockTab(
             onSubmit = { name, pin -> onAddChild(name, pin); showAddChild = false }
         )
     }
+}
+
+/**
+ * Status izin sistem sesungguhnya di HP anak (lihat catatan di ParentLockTab) - null = belum
+ * pernah dilaporkan (mis. versi app lama sebelum fitur ini ada, atau anak belum pernah buka
+ * app), true = aktif, false = SUDAH DICABUT anak lewat Pengaturan sistem.
+ */
+@Composable
+private fun PermissionStatusLabel(label: String, granted: Boolean?) {
+    val (text, color) = when (granted) {
+        true -> stringResource(R.string.status_permission_active) to MaterialTheme.colorScheme.tertiary
+        false -> stringResource(R.string.status_permission_revoked) to MaterialTheme.colorScheme.error
+        null -> stringResource(R.string.status_permission_unknown) to MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Text("$label: $text", style = MaterialTheme.typography.labelSmall, color = color)
 }
 
 @Composable

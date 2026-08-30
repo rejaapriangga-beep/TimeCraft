@@ -73,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import com.keluargakendali.R
 import com.keluargakendali.data.EVIDENCE_MIME_EXT
 import com.keluargakendali.data.FAMILY_CHAT_THREAD_ID
+import com.keluargakendali.data.PactioApi
 import com.keluargakendali.data.TaskDto
 import com.keluargakendali.service.AppForegroundState
 import com.keluargakendali.service.DeviceLockPermissions
@@ -152,6 +153,18 @@ fun ChildScreen(
     }
     DisposableEffect(Unit) {
         onDispose { context.stopService(Intent(context, DomainBlockVpnService::class.java)) }
+    }
+
+    // Lapor status IZIN SISTEM sesungguhnya (bukan niat orang tua) ke server tiap kali salah
+    // satu berubah - supaya kalau anak mencabut izin overlay/VPN lewat Pengaturan sistem, orang
+    // tua langsung tahu (lewat status di tab Kunci Perangkat & log aktivitas), bukan diam-diam
+    // lolos tanpa jejak. Best-effort (gagal kirim tidak perlu ditampilkan sebagai error ke anak -
+    // ini laporan latar belakang, bukan aksi yang diminta anak).
+    val token = state.token
+    LaunchedEffect(hasOverlay, hasVpnPermission, token) {
+        if (token != null) {
+            runCatching { PactioApi.reportPermissionStatus(token, hasOverlay, hasVpnPermission) }
+        }
     }
 
     // Pengaturan sengaja TIDAK ikut sebagai tab - dipindah jadi ikon gerigi di TopAppBar

@@ -59,6 +59,10 @@
     <string name="activity_backup_created">Mengunduh backup terenkripsi</string>
     <string name="activity_password_changed">Mengubah kata sandi</string>
     <string name="activity_blocked_domains_updated">Mengubah daftar blokir domain</string>
+    <string name="activity_overlay_permission_granted">Izin Mode Kunci aktif di HP anak</string>
+    <string name="activity_overlay_permission_revoked">Izin Mode Kunci dicabut di HP anak</string>
+    <string name="activity_vpn_permission_granted">Izin Blokir Domain aktif di HP anak</string>
+    <string name="activity_vpn_permission_revoked">Izin Blokir Domain dicabut di HP anak</string>
     <string name="role_parent_suffix">" (Orang Tua) "</string>
     <string name="role_child_suffix">" (Anak) "</string>
 
@@ -226,6 +230,11 @@
     <!-- Nama anak di daftar toggle kunci perangkat - diberi awalan "Perangkat" karena yang
          dikunci/dibuka sebenarnya perangkat anak itu, bukan anaknya sendiri. -->
     <string name="label_device_of_child">Perangkat %1$s</string>
+    <string name="label_permission_lock">Izin Mode Kunci</string>
+    <string name="label_permission_domain_block">Izin Blokir Domain</string>
+    <string name="status_permission_active">Aktif</string>
+    <string name="status_permission_revoked">Dicabut anak</string>
+    <string name="status_permission_unknown">Belum diketahui</string>
 
     <!-- ParentScreen.kt: Kunci, WaitingTaskCard, dokumen bukti -->
     <string name="action_add_child">+ Tambah Anak</string>

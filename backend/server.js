@@ -255,7 +255,13 @@ function publicUser(user) {
     name: user.name,
     familyId: user.familyId,
     // Hanya relevan untuk anak - field ini undefined (dihilangkan JSON.stringify) untuk orang tua.
-    lockModeEnabled: user.role === "child" ? Boolean(user.lockModeEnabled) : undefined
+    lockModeEnabled: user.role === "child" ? Boolean(user.lockModeEnabled) : undefined,
+    // Status IZIN SISTEM sesungguhnya di HP anak (lihat POST /children/permission-status) -
+    // undefined kalau belum pernah dilaporkan sama sekali (bukan false), supaya UI orang tua
+    // bisa membedakan "belum pernah lapor" dari "sudah dicabut".
+    overlayPermissionGranted: user.role === "child" ? user.overlayPermissionGranted : undefined,
+    vpnPermissionGranted: user.role === "child" ? user.vpnPermissionGranted : undefined,
+    permissionStatusAt: user.role === "child" ? user.permissionStatusAt : undefined
   };
 }
 
@@ -896,6 +902,32 @@ async function route(req, res) {
     const unlockUntil = child.unlockUntil || 0;
     const unlockActive = unlockUntil > Date.now();
     return send(res, 200, { enabled: Boolean(child.lockModeEnabled) && !unlockActive, unlockUntil });
+  }
+
+  // Dilaporkan perangkat anak sendiri (bukan diminta orang tua) - status IZIN SISTEM
+  // sesungguhnya di HP anak (overlay untuk Mode Kunci, VPN untuk Blokir Domain), BUKAN
+  // niat/pengaturan orang tua (itu tetap lockModeEnabled/blockedDomains terpisah). Keduanya
+  // bisa dicabut anak kapan saja lewat Pengaturan sistem tanpa sepengetahuan orang tua -
+  // endpoint ini yang membuat pencabutan itu TERLIHAT (dicatat ke log aktivitas + status
+  // terkini), bukan mencegahnya (lihat diskusi desain fitur ini - Android tidak mengizinkan
+  // aplikasi biasa memaksa izin ini tetap menyala).
+  if (req.method === "POST" && pathname === "/children/permission-status") {
+    const child = auth(req, res, ["child"]); if (!child) return;
+    const body = await bodyOf(req);
+    if (typeof body.overlayGranted !== "boolean" || typeof body.vpnGranted !== "boolean") {
+      return send(res, 400, { error: "overlayGranted dan vpnGranted harus bernilai true/false." });
+    }
+    if (child.overlayPermissionGranted !== body.overlayGranted && child.overlayPermissionGranted !== undefined) {
+      logActivity(child, body.overlayGranted ? "overlay_permission_granted" : "overlay_permission_revoked", child.name);
+    }
+    if (child.vpnPermissionGranted !== body.vpnGranted && child.vpnPermissionGranted !== undefined) {
+      logActivity(child, body.vpnGranted ? "vpn_permission_granted" : "vpn_permission_revoked", child.name);
+    }
+    child.overlayPermissionGranted = body.overlayGranted;
+    child.vpnPermissionGranted = body.vpnGranted;
+    child.permissionStatusAt = new Date().toISOString();
+    save();
+    return send(res, 200, { ok: true });
   }
 
   // Dipanggil dari perangkat anak sebelum mengizinkan tombol "Keluar" (logout) - supaya
