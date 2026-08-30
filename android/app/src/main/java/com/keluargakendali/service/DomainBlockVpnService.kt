@@ -68,7 +68,18 @@ class DomainBlockVpnService : VpnService() {
         startForeground(NOTIFICATION_ID, buildNotification())
         vpnInterface = runCatching { establishTunnel() }.getOrNull()
         syncJob = scope.launch { syncLoop() }
-        tunnelJob = scope.launch { tunnelLoop() }
+        tunnelJob = scope.launch {
+            tunnelLoop()
+            // tunnelLoop keluar (tunnel gagal dibuat, fd rusak/ditutup, atau error tak terduga
+            // lain) - JANGAN biarkan VPN "zombie" tetap aktif tanpa ada yang memproses paket:
+            // sistem sudah terlanjur merutekan semua query DNS perangkat ke tunnel ini (lihat
+            // addDnsServer di establishTunnel), jadi kalau dibiarkan, SEMUA resolusi DNS gagal
+            // total (bukan cuma domain yang mau diblokir) - jauh lebih parah daripada fitur ini
+            // sekadar tidak berfungsi. Matikan diri sendiri supaya sistem otomatis kembali ke
+            // DNS normal, bukan diam saja dalam keadaan rusak.
+            Log.w(TAG, "tunnelLoop berhenti - menghentikan service supaya perangkat kembali ke DNS normal.")
+            stopSelf()
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
@@ -97,6 +108,17 @@ class DomainBlockVpnService : VpnService() {
             .addAddress(TUNNEL_ADDRESS, 32)
             .addDnsServer(TUNNEL_ADDRESS)
             .addRoute(TUNNEL_ADDRESS, 32)
+            // WAJIB true - default Builder adalah NON-blocking, yang membuat input.read() di
+            // tunnelLoop() langsung melempar IOException ("would block") begitu belum ada paket
+            // masuk (bukan menunggu/blocking seperti asumsi kode di bawah), memicu catch -> break
+            // -> tunnelLoop berhenti total dalam hitungan milidetik SEJAK SEBELUM paket pertama
+            // pun sempat lewat - tapi rute DNS ke tunnel ini SUDAH terlanjur aktif di sistem, jadi
+            // hasilnya semua resolusi DNS di perangkat gagal total (bukan cuma domain yang mau
+
+            // diblokir) selama VPN ini aktif. Ini BUG NYATA yang sempat lolos ke produksi -
+            // lihat juga pengaman stopSelf() di onCreate() kalau tunnelLoop tetap berhenti karena
+            // sebab lain di masa depan.
+            .setBlocking(true)
             .establish()
     }
 
