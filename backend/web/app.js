@@ -64,9 +64,23 @@ const state = {
   childPendingDeleteId: null,
   childPendingResetPinId: null,
   activityLog: [],
+  activityLogActorFilter: "",
+  activityLogActionFilter: "",
   showBackupModal: false,
   backupSending: false,
-  backupError: null
+  backupError: null,
+  // Kontrol Konten (Blokir Domain) - lihat renderContentControlCard/BlockedDomainsDialog.kt
+  // (kode yang setara di Android) - family-wide, cuma dimuat sekali tiap tab Pengaturan dibuka,
+  // sama pola dengan activityLog di atas (lihat ensureSettingsDataLoaded).
+  blockedDomains: { customDomains: [], presetKeys: [], presetCategories: [] },
+  blockedDomainsLoaded: false,
+  blockedDomainsSaving: false,
+  blockedDomainsError: null,
+  // Laporkan pesan chat (POST /report) - null kalau dialog tertutup, lihat ReportMessageDialog
+  // di ChatScreen.kt (Android) untuk kode yang setara.
+  reportTarget: null, // { threadId, message }
+  reportSending: false,
+  reportError: null
 };
 
 function safeParse(json) {
@@ -257,6 +271,15 @@ function ensureSettingsDataLoaded() {
   }).catch(() => {
     // gagal diam-diam - Pengaturan tetap tampil tanpa riwayat, tidak menghalangi profil anak/tambah anak
   });
+  api("GET", "/family/blocked-domains").then((result) => {
+    state.blockedDomains = { customDomains: result.customDomains, presetKeys: result.presetKeys, presetCategories: result.presetCategories };
+    state.blockedDomainsLoaded = true;
+    if (!isTypingInField()) render();
+  }).catch((error) => {
+    state.blockedDomainsLoaded = true;
+    state.blockedDomainsError = error.message || "Gagal memuat daftar blokir domain.";
+    if (!isTypingInField()) render();
+  });
 }
 
 // --- Aksi -----------------------------------------------------------------------------
@@ -442,6 +465,51 @@ async function handleReact(threadId, messageId, emoji) {
   render();
 }
 
+/**
+ * Laporkan pesan chat ke pengelola aplikasi (POST /report, dicatat ke REPORTS_LOG_FILE di
+ * server.js), BUKAN ke pengirim pesan/thread chat - lihat ReportMessageDialog di ChatScreen.kt
+ * (Android) untuk kode yang setara.
+ */
+async function handleReportMessage(threadId, messageId, reason) {
+  state.reportSending = true;
+  state.reportError = null;
+  render();
+  try {
+    await api("POST", "/report", { reason, threadKey: threadId, targetMessageId: messageId });
+    state.reportTarget = null;
+    state.infoMessage = "Laporan terkirim, terima kasih.";
+  } catch (error) {
+    state.reportError = error.message || "Gagal mengirim laporan.";
+  }
+  state.reportSending = false;
+  render();
+}
+
+/**
+ * Kelola daftar blokir domain/subdomain (family-wide) - lihat BlockedDomainsDialog.kt di
+ * Android untuk kode yang setara. Mengganti SELURUH daftar (bukan tambah satu-satu, sama
+ * alasannya dengan handleCreateTask/dst - lebih sederhana & menghindari race condition antar
+ * device), dan langsung pakai respons server sebagai state baru (sama seperti GET, tidak perlu
+ * reload terpisah).
+ */
+async function handleSaveBlockedDomains() {
+  state.blockedDomainsSaving = true;
+  state.blockedDomainsError = null;
+  render();
+  try {
+    const result = await api("POST", "/family/blocked-domains", {
+      customDomains: state.blockedDomains.customDomains,
+      presetKeys: state.blockedDomains.presetKeys
+    });
+    state.blockedDomains = { customDomains: result.customDomains, presetKeys: result.presetKeys, presetCategories: result.presetCategories };
+    state.infoMessage = "Blokir domain berhasil disimpan.";
+  } catch (error) {
+    state.blockedDomainsError = error.message || "Gagal menyimpan daftar blokir domain.";
+  }
+  state.blockedDomainsSaving = false;
+  render();
+}
+
 function readFileAsDataUri(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -567,8 +635,44 @@ function renderApp() {
   if (resetPinTarget) wrap.appendChild(renderResetPinModal(resetPinTarget));
   if (state.dashboardCardModal) wrap.appendChild(renderDashboardCardModal());
   if (state.showBackupModal) wrap.appendChild(renderBackupModal());
+  if (state.reportTarget) wrap.appendChild(renderReportModal());
 
   return wrap;
+}
+
+/**
+ * Dialog "Laporkan Pesan" - laporan dikirim ke pengelola aplikasi lewat POST /report, BUKAN
+ * ke pengirim pesan/thread chat - lihat ReportMessageDialog di ChatScreen.kt (Android) untuk
+ * kode yang setara. Alasan wajib diisi supaya laporan berguna saat ditinjau manual.
+ */
+function renderReportModal() {
+  const { threadId, message } = state.reportTarget;
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>Laporkan Pesan</h2>
+      <p style="color: var(--text-muted);">Laporan ini dikirim ke pengelola aplikasi untuk ditinjau, bukan ke pengirim pesan. Jelaskan kenapa pesan ini bermasalah.</p>
+      ${state.reportError ? `<div class="banner banner-error">${escapeHtml(state.reportError)}</div>` : ""}
+      <form id="report-form">
+        <div class="field"><label>Alasan laporan</label><textarea name="reason" rows="3" required autofocus></textarea></div>
+        <div class="modal-close-row">
+          <button type="button" class="btn btn-text" id="cancel-report">Batal</button>
+          <button type="submit" class="btn btn-primary" ${state.reportSending ? "disabled" : ""}>Kirim Laporan</button>
+        </div>
+      </form>
+    </div>
+  `;
+  const close = () => { state.reportTarget = null; state.reportError = null; render(); };
+  overlay.addEventListener("click", (event) => { if (event.target === overlay) close(); });
+  overlay.querySelector("#cancel-report").addEventListener("click", close);
+  overlay.querySelector("#report-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const reason = String(new FormData(event.target).get("reason") || "").trim();
+    if (!reason) { state.reportError = "Alasan laporan wajib diisi."; render(); return; }
+    handleReportMessage(threadId, message.id, reason);
+  });
+  return overlay;
 }
 
 /**
@@ -1049,6 +1153,23 @@ function approvalCard(task) {
 
 // --- Kunci Perangkat ---------------------------------------------------------------------
 
+/**
+ * Status izin sistem sesungguhnya di HP anak (dilaporkan lewat POST /children/permission-status,
+ * lihat server.js) - BEDA dari toggle Mode Kunci di atas yang cuma niat orang tua. Lihat
+ * PermissionStatusLabel di ParentScreen.kt (Android) untuk kode yang setara. undefined/null =
+ * belum pernah lapor (mis. versi app lama), true = aktif, false = SUDAH DICABUT anak.
+ */
+function permissionStatusLabel(granted) {
+  if (granted === true) return "Aktif";
+  if (granted === false) return "Dicabut anak";
+  return "Belum diketahui";
+}
+function permissionStatusColor(granted) {
+  if (granted === true) return "var(--success-text)";
+  if (granted === false) return "var(--error-text)";
+  return "var(--text-muted)";
+}
+
 function renderLockTab() {
   const el = document.createElement("div");
 
@@ -1066,11 +1187,17 @@ function renderLockTab() {
       const row = document.createElement("div");
       row.className = "lock-row";
       row.innerHTML = `
-        <span>${escapeHtml(child.name)}</span>
-        <label class="switch">
-          <input type="checkbox" ${child.lockModeEnabled ? "checked" : ""} ${state.loading ? "disabled" : ""} />
-          <span class="switch-slider"></span>
-        </label>
+        <div class="lock-row-top">
+          <span>${escapeHtml(child.name)}</span>
+          <label class="switch">
+            <input type="checkbox" ${child.lockModeEnabled ? "checked" : ""} ${state.loading ? "disabled" : ""} />
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+        <div class="lock-permission-status">
+          <span style="color: ${permissionStatusColor(child.overlayPermissionGranted)}">Izin Mode Kunci: ${permissionStatusLabel(child.overlayPermissionGranted)}</span>
+          <span style="color: ${permissionStatusColor(child.vpnPermissionGranted)}">Izin Blokir Domain: ${permissionStatusLabel(child.vpnPermissionGranted)}</span>
+        </div>
       `;
       row.querySelector("input").addEventListener("change", (event) => handleSetLock(child.id, event.target.checked));
       el.appendChild(row);
@@ -1130,9 +1257,118 @@ function renderSettingsTab() {
   card.appendChild(addChildHint);
 
   el.appendChild(card);
+  el.appendChild(renderContentControlCard());
   el.appendChild(renderBackupCard());
   el.appendChild(renderActivityLogCard());
   return el;
+}
+
+/**
+ * Kontrol Konten (Blokir Domain/Situs) - kategori preset siap-centang + domain custom, family-
+ * wide - lihat BlockedDomainsDialog.kt di Android untuk kode yang setara. Ganti SELURUH daftar
+ * sekaligus lewat tombol Simpan (bukan tambah satu-satu ke server), sama alasannya dengan
+ * handleCreateTask/dst - lebih sederhana & menghindari race condition antar device.
+ */
+function renderContentControlCard() {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    <h3 style="margin-top: 0;">Kontrol Konten</h3>
+    <p style="color: var(--text-muted); font-size: 13px; margin-top: -6px;">Blokir domain/situs tertentu di HP anak lewat filter DNS lokal (tanpa root) - berlaku untuk semua anak di keluarga ini.</p>
+  `;
+
+  if (!state.blockedDomainsLoaded) {
+    card.appendChild(emptyHint("Memuat..."));
+    return card;
+  }
+
+  if (state.blockedDomainsError) {
+    card.appendChild(banner("error", state.blockedDomainsError, () => { state.blockedDomainsError = null; render(); }));
+  }
+
+  const presetTitle = document.createElement("div");
+  presetTitle.className = "content-control-subheading";
+  presetTitle.textContent = "Kategori Preset";
+  card.appendChild(presetTitle);
+
+  if (state.blockedDomains.presetCategories.length === 0) {
+    card.appendChild(emptyHint("Belum ada kategori preset tersedia."));
+  } else {
+    state.blockedDomains.presetCategories.forEach((category) => {
+      const row = document.createElement("label");
+      row.className = "content-control-checkbox-row";
+      const checked = state.blockedDomains.presetKeys.includes(category.key);
+      row.innerHTML = `<input type="checkbox" ${checked ? "checked" : ""} /><span>${escapeHtml(category.label)}</span>`;
+      row.querySelector("input").addEventListener("change", (event) => {
+        const set = new Set(state.blockedDomains.presetKeys);
+        if (event.target.checked) set.add(category.key); else set.delete(category.key);
+        state.blockedDomains.presetKeys = Array.from(set);
+      });
+      card.appendChild(row);
+    });
+  }
+
+  const divider = document.createElement("hr");
+  divider.className = "content-control-divider";
+  card.appendChild(divider);
+
+  const customTitle = document.createElement("div");
+  customTitle.className = "content-control-subheading";
+  customTitle.textContent = "Domain Custom";
+  card.appendChild(customTitle);
+  const customDesc = document.createElement("p");
+  customDesc.style.cssText = "color: var(--text-muted); font-size: 12px; margin: 0 0 8px;";
+  customDesc.textContent = 'Subdomain otomatis ikut terblokir (mis. menambah "contoh.com" juga memblokir "apa.contoh.com").';
+  card.appendChild(customDesc);
+
+  const addForm = document.createElement("form");
+  addForm.className = "content-control-add-row";
+  addForm.innerHTML = `
+    <input type="text" placeholder="contoh.com" />
+    <button type="submit" class="btn btn-outline btn-sm">Tambah</button>
+  `;
+  addForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const input = addForm.querySelector("input");
+    const value = input.value.trim();
+    input.value = "";
+    if (value && !state.blockedDomains.customDomains.includes(value)) {
+      state.blockedDomains.customDomains = [...state.blockedDomains.customDomains, value];
+      render();
+    }
+  });
+  card.appendChild(addForm);
+
+  if (state.blockedDomains.customDomains.length === 0) {
+    card.appendChild(emptyHint("Belum ada domain custom."));
+  } else {
+    state.blockedDomains.customDomains.forEach((domain) => {
+      const row = document.createElement("div");
+      row.className = "content-control-domain-row";
+      row.innerHTML = `<span>${escapeHtml(domain)}</span>`;
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "btn btn-text btn-sm";
+      removeBtn.textContent = "Hapus";
+      removeBtn.addEventListener("click", () => {
+        state.blockedDomains.customDomains = state.blockedDomains.customDomains.filter((d) => d !== domain);
+        render();
+      });
+      row.appendChild(removeBtn);
+      card.appendChild(row);
+    });
+  }
+
+  const saveBtn = document.createElement("button");
+  saveBtn.type = "button";
+  saveBtn.className = "btn btn-primary";
+  saveBtn.style.marginTop = "12px";
+  saveBtn.disabled = state.blockedDomainsSaving;
+  saveBtn.textContent = state.blockedDomainsSaving ? "Menyimpan..." : "Simpan Blokir Domain";
+  saveBtn.addEventListener("click", handleSaveBlockedDomains);
+  card.appendChild(saveBtn);
+
+  return card;
 }
 
 /** Lihat handleDownloadBackup untuk alur lengkapnya (server mengenkripsi, browser langsung mengunduh). */
@@ -1197,39 +1433,76 @@ const ACTIVITY_ACTION_LABEL = {
   task_rejected: "Menolak tugas",
   access_redeemed: "Menukar saldo menit jadi waktu akses",
   backup_created: "Mengunduh backup terenkripsi",
-  password_changed: "Mengubah kata sandi"
+  password_changed: "Mengubah kata sandi",
+  overlay_permission_granted: "Izin Mode Kunci aktif di HP anak",
+  overlay_permission_revoked: "Izin Mode Kunci dicabut di HP anak",
+  vpn_permission_granted: "Izin Blokir Domain aktif di HP anak",
+  vpn_permission_revoked: "Izin Blokir Domain dicabut di HP anak",
+  blocked_domains_updated: "Mengubah daftar blokir domain"
 };
 
+/**
+ * Log Aktivitas dengan filter Pelaku & Jenis Aksi - lihat ActivityLogDialog di ParentScreen.kt
+ * (Android) untuk kode yang setara. Opsi filter dihitung dinamis dari activityLog yang ada
+ * (bukan daftar tetap), supaya tidak menampilkan opsi yang memang belum pernah terjadi.
+ */
 function renderActivityLogCard() {
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `<h3 style="margin-top: 0;">Log Aktivitas</h3>`;
 
   if (state.activityLog.length === 0) {
-    const hint = document.createElement("p");
-    hint.style.color = "var(--text-muted)";
-    hint.textContent = "Belum ada aktivitas tercatat.";
-    card.appendChild(hint);
-  } else {
-    const list = document.createElement("div");
-    list.className = "activity-log-list";
-    state.activityLog.forEach((entry) => {
-      const row = document.createElement("div");
-      row.className = "activity-log-row";
-      const label = ACTIVITY_ACTION_LABEL[entry.action] || entry.action;
-      const roleLabel = entry.actorRole === "parent" ? "Orang Tua" : "Anak";
-      row.innerHTML = `
-        <div class="activity-log-main">
-          <span class="activity-log-actor">${escapeHtml(entry.actorName)}</span>
-          <span class="activity-log-role">(${roleLabel})</span> ${escapeHtml(label)}
-          ${entry.detail ? `<span class="activity-log-detail"> - ${escapeHtml(entry.detail)}</span>` : ""}
-        </div>
-        <div class="activity-log-time">${escapeHtml(formatActivityLogTime(entry.createdAt))}</div>
-      `;
-      list.appendChild(row);
-    });
-    card.appendChild(list);
+    card.appendChild(emptyHint("Belum ada aktivitas tercatat."));
+    return card;
   }
+
+  const actors = [];
+  const actorSeen = new Set();
+  state.activityLog.forEach((entry) => {
+    if (!actorSeen.has(entry.actorId)) { actorSeen.add(entry.actorId); actors.push({ id: entry.actorId, name: entry.actorName }); }
+  });
+  const actions = Array.from(new Set(state.activityLog.map((entry) => entry.action)));
+
+  const filterRow = document.createElement("div");
+  filterRow.className = "filter-row";
+  const actorOptions = actors.map((a) => `<option value="${escapeHtml(a.id)}" ${state.activityLogActorFilter === a.id ? "selected" : ""}>${escapeHtml(a.name)}</option>`).join("");
+  const actionOptions = actions.map((a) => `<option value="${escapeHtml(a)}" ${state.activityLogActionFilter === a ? "selected" : ""}>${escapeHtml(ACTIVITY_ACTION_LABEL[a] || a)}</option>`).join("");
+  filterRow.innerHTML = `
+    <select id="activity-actor-filter"><option value="">Semua Orang</option>${actorOptions}</select>
+    <select id="activity-action-filter"><option value="">Semua Jenis Aksi</option>${actionOptions}</select>
+  `;
+  filterRow.querySelector("#activity-actor-filter").addEventListener("change", (e) => { state.activityLogActorFilter = e.target.value; render(); });
+  filterRow.querySelector("#activity-action-filter").addEventListener("change", (e) => { state.activityLogActionFilter = e.target.value; render(); });
+  card.appendChild(filterRow);
+
+  const filtered = state.activityLog.filter((entry) =>
+    (!state.activityLogActorFilter || entry.actorId === state.activityLogActorFilter) &&
+    (!state.activityLogActionFilter || entry.action === state.activityLogActionFilter)
+  );
+
+  if (filtered.length === 0) {
+    card.appendChild(emptyHint("Tidak ada aktivitas yang cocok dengan filter ini."));
+    return card;
+  }
+
+  const list = document.createElement("div");
+  list.className = "activity-log-list";
+  filtered.forEach((entry) => {
+    const row = document.createElement("div");
+    row.className = "activity-log-row";
+    const label = ACTIVITY_ACTION_LABEL[entry.action] || entry.action;
+    const roleLabel = entry.actorRole === "parent" ? "Orang Tua" : "Anak";
+    row.innerHTML = `
+      <div class="activity-log-main">
+        <span class="activity-log-actor">${escapeHtml(entry.actorName)}</span>
+        <span class="activity-log-role">(${roleLabel})</span> ${escapeHtml(label)}
+        ${entry.detail ? `<span class="activity-log-detail"> - ${escapeHtml(entry.detail)}</span>` : ""}
+      </div>
+      <div class="activity-log-time">${escapeHtml(formatActivityLogTime(entry.createdAt))}</div>
+    `;
+    list.appendChild(row);
+  });
+  card.appendChild(list);
 
   return card;
 }
@@ -1474,6 +1747,7 @@ function chatBubble(message) {
   actionsRow.innerHTML = `
     <button type="button" class="chat-action-btn" data-action="reply" title="Balas">↩ Balas</button>
     <button type="button" class="chat-action-btn" data-action="react" title="Beri reaksi">🙂 Reaksi</button>
+    <button type="button" class="chat-action-btn" data-action="report" title="Laporkan pesan ini ke pengelola aplikasi">⚠ Laporkan</button>
   `;
   actionsRow.querySelector('[data-action="reply"]').addEventListener("click", () => {
     const preview = message.type === "photo" ? "📷 Foto" : (message.text || "");
@@ -1484,6 +1758,11 @@ function chatBubble(message) {
   });
   actionsRow.querySelector('[data-action="react"]').addEventListener("click", () => {
     state.reactionPickerMessageId = state.reactionPickerMessageId === message.id ? null : message.id;
+    render();
+  });
+  actionsRow.querySelector('[data-action="report"]').addEventListener("click", () => {
+    state.reportTarget = { threadId: state.chatThreadId, message };
+    state.reportError = null;
     render();
   });
   bubble.appendChild(actionsRow);

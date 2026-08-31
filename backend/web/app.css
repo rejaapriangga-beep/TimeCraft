@@ -270,15 +270,17 @@ button { font-family: inherit; }
 .lock-summary { font-weight: 700; margin-bottom: 14px; }
 .lock-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   background: var(--surface);
   border-radius: 14px;
   box-shadow: var(--shadow);
   padding: 14px 16px;
   margin-bottom: 8px;
-  font-weight: 600;
 }
+.lock-row-top { display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
+/* Status izin sistem sesungguhnya di HP anak (Aktif/Dicabut anak/Belum diketahui) - lihat
+   permissionStatusLabel/permissionStatusColor. */
+.lock-permission-status { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; margin-top: 8px; font-weight: 500; }
 
 .switch { position: relative; display: inline-block; width: 44px; height: 26px; }
 .switch input { opacity: 0; width: 0; height: 0; }
@@ -312,6 +314,30 @@ button { font-family: inherit; }
 .settings-child-row:last-of-type { border-bottom: none; }
 .settings-child-row > span:first-child { font-weight: 600; }
 .settings-child-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* --- Kontrol Konten (Blokir Domain) --- */
+.content-control-subheading { font-weight: 700; font-size: 13px; margin: 14px 0 8px; }
+.content-control-subheading:first-of-type { margin-top: 4px; }
+.content-control-checkbox-row {
+  display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 4px 0; cursor: pointer;
+}
+.content-control-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.content-control-add-row { display: flex; gap: 6px; margin-bottom: 8px; }
+.content-control-add-row input {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+}
+.content-control-add-row input:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+.content-control-domain-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 0; font-size: 14px; border-bottom: 1px solid var(--border);
+}
+.content-control-domain-row:last-of-type { border-bottom: none; }
 
 /* --- Log Aktivitas --- */
 .activity-log-list { display: flex; flex-direction: column; gap: 2px; max-height: 420px; overflow-y: auto; }
