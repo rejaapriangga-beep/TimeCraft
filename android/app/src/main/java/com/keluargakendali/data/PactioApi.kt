@@ -172,8 +172,11 @@ object PactioApi {
      * anak mencabutnya sendiri lewat Pengaturan sistem (lihat ChildScreen.kt/
      * DomainBlockVpnService.kt pemanggilnya, dan POST /children/permission-status di server.js).
      */
-    suspend fun reportPermissionStatus(token: String, overlayGranted: Boolean, vpnGranted: Boolean) {
-        val body = JSONObject().put("overlayGranted", overlayGranted).put("vpnGranted", vpnGranted)
+    suspend fun reportPermissionStatus(token: String, overlayGranted: Boolean, vpnGranted: Boolean, guardGranted: Boolean) {
+        val body = JSONObject()
+            .put("overlayGranted", overlayGranted)
+            .put("vpnGranted", vpnGranted)
+            .put("guardGranted", guardGranted)
         request("POST", "/children/permission-status", token = token, body = body)
     }
 
@@ -387,6 +390,7 @@ object PactioApi {
         lockModeEnabled = optBoolean("lockModeEnabled", false),
         overlayPermissionGranted = if (has("overlayPermissionGranted") && !isNull("overlayPermissionGranted")) getBoolean("overlayPermissionGranted") else null,
         vpnPermissionGranted = if (has("vpnPermissionGranted") && !isNull("vpnPermissionGranted")) getBoolean("vpnPermissionGranted") else null,
+        guardPermissionGranted = if (has("guardPermissionGranted") && !isNull("guardPermissionGranted")) getBoolean("guardPermissionGranted") else null,
         permissionStatusAt = if (has("permissionStatusAt") && !isNull("permissionStatusAt")) getString("permissionStatusAt") else null
     )
 

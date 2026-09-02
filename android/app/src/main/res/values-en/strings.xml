@@ -56,6 +56,8 @@
     <string name="activity_overlay_permission_revoked">Device Lock permission revoked on child\'s phone</string>
     <string name="activity_vpn_permission_granted">Domain Block permission active on child\'s phone</string>
     <string name="activity_vpn_permission_revoked">Domain Block permission revoked on child\'s phone</string>
+    <string name="activity_guard_permission_granted">Settings Guard permission active on child\'s phone</string>
+    <string name="activity_guard_permission_revoked">Settings Guard permission revoked on child\'s phone</string>
     <string name="role_parent_suffix">" (Parent) "</string>
     <string name="role_child_suffix">" (Child) "</string>
 
@@ -231,6 +233,7 @@
     <string name="label_device_of_child">%1$s\'s Device</string>
     <string name="label_permission_lock">Device Lock permission</string>
     <string name="label_permission_domain_block">Domain Block permission</string>
+    <string name="label_permission_settings_guard">Settings Guard permission</string>
     <string name="status_permission_active">Active</string>
     <string name="status_permission_revoked">Revoked by child</string>
     <string name="status_permission_unknown">Unknown</string>
@@ -286,6 +289,16 @@
     <string name="desc_domain_block_permission_not_granted">So a parent can block specific domains/sites on this phone, allow the local VPN connection below. This ONLY filters domain names (DNS) - it doesn\'t read your traffic content.</string>
     <string name="action_allow_vpn">Allow Local VPN Connection</string>
     <string name="desc_domain_block_child_note">The blocked domain list can only be managed by a parent from Settings.</string>
+
+    <!-- ChildScreen.kt: ChildLockTab - Settings Guard (SettingsGuardAccessibilityService) -->
+    <string name="heading_settings_guard">Settings Guard</string>
+    <string name="desc_settings_guard_permission_granted">TimeCraft will kick back out if anyone tries to open TimeCraft\'s App Info or revoke this permission from Settings. You can turn it off anytime from Settings &gt; Accessibility (Safe Mode also disables it temporarily).</string>
+    <string name="desc_settings_guard_permission_not_granted">To make it harder to change the Device Lock/Domain Block permissions from Settings without a parent knowing, enable the Accessibility Service below. This is NOT a full block - it only kicks you out of Settings screens related to TimeCraft.</string>
+    <string name="action_allow_settings_guard">Enable Settings Guard</string>
+    <string name="desc_settings_guard_child_note">This feature is optional, enabled by a parent if needed - it doesn\'t change any other app on your phone.</string>
+    <string name="toast_settings_guard_blocked">This setting is managed by a parent in TimeCraft.</string>
+    <string name="accessibility_service_label">TimeCraft - Settings Guard</string>
+    <string name="accessibility_service_description">Helps parents keep TimeCraft\'s Device Lock and Domain Block permissions from being easily revoked - once enabled, TimeCraft automatically closes Settings screens that mention TimeCraft or VPN and navigates back. Does not read or store any other activity on the phone.</string>
     <string name="label_name">Name</string>
     <string name="desc_logout_hint">To sign out of this account, use the \"Log out\" button at the top right.</string>
     <string name="heading_access_balance">Reward Access Balance</string>

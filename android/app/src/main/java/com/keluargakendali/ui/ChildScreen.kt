@@ -80,6 +80,7 @@ import com.keluargakendali.service.DeviceLockPermissions
 import com.keluargakendali.service.DeviceLockService
 import com.keluargakendali.service.DomainBlockPermissions
 import com.keluargakendali.service.DomainBlockVpnService
+import com.keluargakendali.service.SettingsGuardPermissions
 import kotlinx.coroutines.delay
 import java.io.File
 
@@ -155,27 +156,40 @@ fun ChildScreen(
         onDispose { context.stopService(Intent(context, DomainBlockVpnService::class.java)) }
     }
 
-    // Lapor status IZIN SISTEM sesungguhnya (bukan niat orang tua) ke server tiap kali salah
-    // satu berubah - supaya kalau anak mencabut izin overlay/VPN lewat Pengaturan sistem, orang
-    // tua langsung tahu (lewat status di tab Kunci Perangkat & log aktivitas), bukan diam-diam
-    // lolos tanpa jejak. Best-effort (gagal kirim tidak perlu ditampilkan sebagai error ke anak -
-    // ini laporan latar belakang, bukan aksi yang diminta anak).
-    val token = state.token
-    LaunchedEffect(hasOverlay, hasVpnPermission, token) {
-        if (token != null) {
-            runCatching { PactioApi.reportPermissionStatus(token, hasOverlay, hasVpnPermission) }
+    // Proteksi Pengaturan (SettingsGuardAccessibilityService) - BEDA dari overlay/VPN di atas,
+    // tidak ada service untuk dinyala/matikan secara eksplisit di sini: sistem Android sendiri
+    // yang menjalankan accessibility service begitu diaktifkan pengguna lewat Pengaturan >
+    // Aksesibilitas. Di sini cuma perlu poll statusnya, sama pola pollingnya dengan dua di atas.
+    var hasSettingsGuard by remember { mutableStateOf(SettingsGuardPermissions.isEnabled(context)) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            hasSettingsGuard = SettingsGuardPermissions.isEnabled(context)
+            delay(2000)
         }
     }
 
-    // Tab "Kunci Perangkat" SENGAJA disembunyikan begitu KEDUA izin (overlay Mode Kunci + VPN
-    // Blokir Domain) sudah disetujui anak - supaya tidak jadi pengingat harian yang justru
-    // memancing anak cari cara mengakalinya (mis. tanya AI/internet "cara matikan izin X di
-    // TimeCraft"). Ini murni soal visibilitas MENU di app - service penegaknya (DeviceLockService/
-    // DomainBlockVpnService di atas) tetap jalan sama persis terlepas dari tab ini terlihat atau
-    // tidak. Tab ini otomatis MUNCUL LAGI kalau salah satu izin kembali tercabut (lihat hasOverlay/
-    // hasVpnPermission di atas), supaya anak tetap punya jalan menyetujui ulang kalau perlu -
-    // bukan hilang selamanya, cuma tidak terus-terusan terlihat selama semuanya sudah beres.
-    val showLockTab = !(hasOverlay && hasVpnPermission)
+    // Lapor status IZIN SISTEM sesungguhnya (bukan niat orang tua) ke server tiap kali salah
+    // satu berubah - supaya kalau anak mencabut izin overlay/VPN/proteksi pengaturan lewat
+    // Pengaturan sistem, orang tua langsung tahu (lewat status di tab Kunci Perangkat & log
+    // aktivitas), bukan diam-diam lolos tanpa jejak. Best-effort (gagal kirim tidak perlu
+    // ditampilkan sebagai error ke anak - ini laporan latar belakang, bukan aksi yang diminta anak).
+    val token = state.token
+    LaunchedEffect(hasOverlay, hasVpnPermission, hasSettingsGuard, token) {
+        if (token != null) {
+            runCatching { PactioApi.reportPermissionStatus(token, hasOverlay, hasVpnPermission, hasSettingsGuard) }
+        }
+    }
+
+    // Tab "Kunci Perangkat" SENGAJA disembunyikan begitu SEMUA TIGA izin (overlay Mode Kunci,
+    // VPN Blokir Domain, Accessibility Service Proteksi Pengaturan) sudah disetujui anak - supaya
+    // tidak jadi pengingat harian yang justru memancing anak cari cara mengakalinya (mis. tanya
+    // AI/internet "cara matikan izin X di TimeCraft"). Ini murni soal visibilitas MENU di app -
+    // service penegaknya (DeviceLockService/DomainBlockVpnService/SettingsGuardAccessibilityService
+    // di atas) tetap jalan sama persis terlepas dari tab ini terlihat atau tidak. Tab ini otomatis
+    // MUNCUL LAGI kalau salah satu izin kembali tercabut, supaya anak tetap punya jalan menyetujui
+    // ulang kalau perlu - bukan hilang selamanya, cuma tidak terus-terusan terlihat selama
+    // semuanya sudah beres.
+    val showLockTab = !(hasOverlay && hasVpnPermission && hasSettingsGuard)
 
     // Pengaturan sengaja TIDAK ikut sebagai tab - dipindah jadi ikon gerigi di TopAppBar
     // (lihat MainActivity), tepat di sebelah kiri "Keluar", supaya tab-tab ini muat satu baris.
@@ -216,7 +230,9 @@ fun ChildScreen(
                 onRequestVpnPermission = {
                     val prepareIntent = DomainBlockPermissions.prepareIntent(context)
                     if (prepareIntent != null) vpnPermissionLauncher.launch(prepareIntent) else hasVpnPermission = true
-                }
+                },
+                hasSettingsGuard = hasSettingsGuard,
+                onRequestSettingsGuard = { context.startActivity(SettingsGuardPermissions.accessibilitySettingsIntent()) }
             )
         }
     }
@@ -415,7 +431,9 @@ private fun ChildLockTab(
     hasOverlay: Boolean,
     onOpenSettings: () -> Unit,
     hasVpnPermission: Boolean,
-    onRequestVpnPermission: () -> Unit
+    onRequestVpnPermission: () -> Unit,
+    hasSettingsGuard: Boolean,
+    onRequestSettingsGuard: () -> Unit
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.heading_device_lock), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -475,6 +493,37 @@ private fun ChildLockTab(
         }
         Text(
             stringResource(R.string.desc_domain_block_child_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(Modifier.height(8.dp))
+        Text(stringResource(R.string.heading_settings_guard), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = if (hasSettingsGuard) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    if (hasSettingsGuard) stringResource(R.string.label_permission_granted) else stringResource(R.string.label_permission_not_granted),
+                    fontWeight = FontWeight.Bold,
+                    color = if (hasSettingsGuard) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    if (hasSettingsGuard) stringResource(R.string.desc_settings_guard_permission_granted) else stringResource(R.string.desc_settings_guard_permission_not_granted),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (hasSettingsGuard) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                if (!hasSettingsGuard) {
+                    Button(onClick = onRequestSettingsGuard, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.action_allow_settings_guard))
+                    }
+                }
+            }
+        }
+        Text(
+            stringResource(R.string.desc_settings_guard_child_note),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

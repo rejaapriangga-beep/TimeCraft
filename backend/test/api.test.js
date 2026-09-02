@@ -158,12 +158,18 @@ test("status izin perangkat anak: dilaporkan sendiri, terlihat orang tua, tercat
   const childBefore = beforeReport.body.children.find((item) => item.id === child.body.child.id);
   assert.equal(childBefore.overlayPermissionGranted, undefined);
   assert.equal(childBefore.vpnPermissionGranted, undefined);
+  assert.equal(childBefore.guardPermissionGranted, undefined);
 
-  // Laporan pertama: true/true - TIDAK dicatat sebagai "dicabut" di log (belum ada status sebelumnya untuk dibandingkan).
+  // Laporan pertama: true/true, TANPA guardGranted (mensimulasikan APK anak versi lama sebelum
+  // fitur Accessibility Service ada) - harus tetap diterima 200, guardPermissionGranted tetap
+  // undefined (bukan diisi false), dan TIDAK dicatat sebagai "dicabut" di log (belum ada status
+  // sebelumnya untuk dibandingkan).
   const firstReport = await request("/children/permission-status", { method: "POST", headers: childAuth, body: JSON.stringify({ overlayGranted: true, vpnGranted: true }) });
   assert.equal(firstReport.status, 200);
   const logAfterFirst = await request("/activity-log", { headers: parentAuth });
   assert.ok(!logAfterFirst.body.entries.some((entry) => entry.action.includes("permission")));
+  const afterFirstFamily = await request("/family", { headers: parentAuth });
+  assert.equal(afterFirstFamily.body.children.find((item) => item.id === child.body.child.id).guardPermissionGranted, undefined);
 
   // Anak mencabut izin VPN - status terbaru terlihat orang tua & tercatat di log aktivitas.
   const secondReport = await request("/children/permission-status", { method: "POST", headers: childAuth, body: JSON.stringify({ overlayGranted: true, vpnGranted: false }) });
@@ -174,4 +180,20 @@ test("status izin perangkat anak: dilaporkan sendiri, terlihat orang tua, tercat
   assert.equal(childAfter.vpnPermissionGranted, false);
   const logAfterRevoke = await request("/activity-log", { headers: parentAuth });
   assert.ok(logAfterRevoke.body.entries.some((entry) => entry.action === "vpn_permission_revoked"));
+
+  // APK anak sudah update, mulai kirim guardGranted juga - laporan pertama untuk field ini juga
+  // tidak dicatat sebagai "dicabut" (baseline baru), lalu pencabutannya tercatat sama seperti overlay/vpn.
+  const thirdReport = await request("/children/permission-status", { method: "POST", headers: childAuth, body: JSON.stringify({ overlayGranted: true, vpnGranted: false, guardGranted: true }) });
+  assert.equal(thirdReport.status, 200);
+  const afterThirdFamily = await request("/family", { headers: parentAuth });
+  assert.equal(afterThirdFamily.body.children.find((item) => item.id === child.body.child.id).guardPermissionGranted, true);
+  const logAfterThird = await request("/activity-log", { headers: parentAuth });
+  assert.ok(!logAfterThird.body.entries.some((entry) => entry.action.includes("guard")));
+
+  const fourthReport = await request("/children/permission-status", { method: "POST", headers: childAuth, body: JSON.stringify({ overlayGranted: true, vpnGranted: false, guardGranted: false }) });
+  assert.equal(fourthReport.status, 200);
+  const afterFourthFamily = await request("/family", { headers: parentAuth });
+  assert.equal(afterFourthFamily.body.children.find((item) => item.id === child.body.child.id).guardPermissionGranted, false);
+  const logAfterFourth = await request("/activity-log", { headers: parentAuth });
+  assert.ok(logAfterFourth.body.entries.some((entry) => entry.action === "guard_permission_revoked"));
 });

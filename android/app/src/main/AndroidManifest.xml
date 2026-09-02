@@ -67,6 +67,29 @@
         </service>
 
         <!--
+            Accessibility Service opsional untuk mempersulit anak mencabut izin Mode Kunci/Blokir
+            Domain lewat Pengaturan sistem - lihat komentar lengkap di
+            SettingsGuardAccessibilityService.kt kenapa fitur ini ada & batasan jujurnya (bukan
+            pemblokiran level-OS, cuma "mengusir" balik). permission="BIND_ACCESSIBILITY_SERVICE"
+            WAJIB persis seperti ini (hanya sistem Android yang boleh mengikatnya), dan
+            android:label sengaja diisi khusus (bukan warisan label aplikasi) karena teks INI yang
+            tampil di daftar Pengaturan > Aksesibilitas saat pengguna memilih & mengaktifkannya -
+            transparan soal fungsinya, bukan disamarkan.
+        -->
+        <service
+            android:name=".service.SettingsGuardAccessibilityService"
+            android:exported="false"
+            android:label="@string/accessibility_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/settings_guard_accessibility_config" />
+        </service>
+
+        <!--
             Device admin KHUSUS proteksi anti-uninstall (lihat komentar lengkap di
             UninstallProtectionAdminReceiver.kt) - orang tua mengaktifkannya sendiri lewat
             dialog sistem resmi Android (ACTION_ADD_DEVICE_ADMIN) di menu Pengaturan aplikasi,

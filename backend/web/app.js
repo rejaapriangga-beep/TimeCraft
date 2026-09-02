@@ -1197,6 +1197,7 @@ function renderLockTab() {
         <div class="lock-permission-status">
           <span style="color: ${permissionStatusColor(child.overlayPermissionGranted)}">Izin Mode Kunci: ${permissionStatusLabel(child.overlayPermissionGranted)}</span>
           <span style="color: ${permissionStatusColor(child.vpnPermissionGranted)}">Izin Blokir Domain: ${permissionStatusLabel(child.vpnPermissionGranted)}</span>
+          <span style="color: ${permissionStatusColor(child.guardPermissionGranted)}">Izin Proteksi Pengaturan: ${permissionStatusLabel(child.guardPermissionGranted)}</span>
         </div>
       `;
       row.querySelector("input").addEventListener("change", (event) => handleSetLock(child.id, event.target.checked));
@@ -1438,6 +1439,8 @@ const ACTIVITY_ACTION_LABEL = {
   overlay_permission_revoked: "Izin Mode Kunci dicabut di HP anak",
   vpn_permission_granted: "Izin Blokir Domain aktif di HP anak",
   vpn_permission_revoked: "Izin Blokir Domain dicabut di HP anak",
+  guard_permission_granted: "Izin Proteksi Pengaturan aktif di HP anak",
+  guard_permission_revoked: "Izin Proteksi Pengaturan dicabut di HP anak",
   blocked_domains_updated: "Mengubah daftar blokir domain"
 };
 

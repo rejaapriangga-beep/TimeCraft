@@ -261,6 +261,10 @@ function publicUser(user) {
     // bisa membedakan "belum pernah lapor" dari "sudah dicabut".
     overlayPermissionGranted: user.role === "child" ? user.overlayPermissionGranted : undefined,
     vpnPermissionGranted: user.role === "child" ? user.vpnPermissionGranted : undefined,
+    // Status izin Accessibility Service (lihat SettingsGuardAccessibilityService di Android) -
+    // opsional secara backward-compat (lihat POST /children/permission-status): undefined kalau
+    // APK anak masih versi lama yang belum mengirim field ini sama sekali, BEDA dari false.
+    guardPermissionGranted: user.role === "child" ? user.guardPermissionGranted : undefined,
     permissionStatusAt: user.role === "child" ? user.permissionStatusAt : undefined
   };
 }
@@ -917,14 +921,24 @@ async function route(req, res) {
     if (typeof body.overlayGranted !== "boolean" || typeof body.vpnGranted !== "boolean") {
       return send(res, 400, { error: "overlayGranted dan vpnGranted harus bernilai true/false." });
     }
+    // guardGranted (status Accessibility Service - lihat SettingsGuardAccessibilityService di
+    // Android) SENGAJA opsional, bukan wajib seperti dua field di atas - APK anak versi lama
+    // (sebelum fitur ini ada) masih mengirim permission-status tanpa field ini sama sekali,
+    // dan itu HARUS tetap diterima (bukan ditolak 400), supaya tidak memutus pelaporan
+    // overlay/vpn yang sudah berjalan hanya karena anak belum update aplikasi.
+    const hasGuardField = typeof body.guardGranted === "boolean";
     if (child.overlayPermissionGranted !== body.overlayGranted && child.overlayPermissionGranted !== undefined) {
       logActivity(child, body.overlayGranted ? "overlay_permission_granted" : "overlay_permission_revoked", child.name);
     }
     if (child.vpnPermissionGranted !== body.vpnGranted && child.vpnPermissionGranted !== undefined) {
       logActivity(child, body.vpnGranted ? "vpn_permission_granted" : "vpn_permission_revoked", child.name);
     }
+    if (hasGuardField && child.guardPermissionGranted !== body.guardGranted && child.guardPermissionGranted !== undefined) {
+      logActivity(child, body.guardGranted ? "guard_permission_granted" : "guard_permission_revoked", child.name);
+    }
     child.overlayPermissionGranted = body.overlayGranted;
     child.vpnPermissionGranted = body.vpnGranted;
+    if (hasGuardField) child.guardPermissionGranted = body.guardGranted;
     child.permissionStatusAt = new Date().toISOString();
     save();
     return send(res, 200, { ok: true });

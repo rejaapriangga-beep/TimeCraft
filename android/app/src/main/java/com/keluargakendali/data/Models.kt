@@ -22,6 +22,10 @@ data class UserDto(
     // berarti untuk role "child".
     val overlayPermissionGranted: Boolean? = null,
     val vpnPermissionGranted: Boolean? = null,
+    // Status Accessibility Service (SettingsGuardAccessibilityService) - opsional secara
+    // backward-compat, lihat POST /children/permission-status di server.js. null juga berarti
+    // "belum pernah lapor field ini" untuk APK anak versi lama yang belum punya fitur ini.
+    val guardPermissionGranted: Boolean? = null,
     val permissionStatusAt: String? = null
 )
 
@@ -212,6 +216,8 @@ fun activityActionLabel(action: String): String = when (action) {
     "overlay_permission_revoked" -> stringResource(R.string.activity_overlay_permission_revoked)
     "vpn_permission_granted" -> stringResource(R.string.activity_vpn_permission_granted)
     "vpn_permission_revoked" -> stringResource(R.string.activity_vpn_permission_revoked)
+    "guard_permission_granted" -> stringResource(R.string.activity_guard_permission_granted)
+    "guard_permission_revoked" -> stringResource(R.string.activity_guard_permission_revoked)
     "blocked_domains_updated" -> stringResource(R.string.activity_blocked_domains_updated)
     else -> action
 }

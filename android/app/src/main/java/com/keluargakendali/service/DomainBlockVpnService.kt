@@ -107,10 +107,11 @@ class DomainBlockVpnService : VpnService() {
     override fun onRevoke() {
         val tokenStore = SecureTokenStore(applicationContext)
         val hasOverlay = DeviceLockPermissions.hasOverlayPermission(applicationContext)
+        val hasSettingsGuard = SettingsGuardPermissions.isEnabled(applicationContext)
         scope.launch {
             val token = tokenStore.loadToken()
             if (token != null) {
-                runCatching { PactioApi.reportPermissionStatus(token, hasOverlay, false) }
+                runCatching { PactioApi.reportPermissionStatus(token, hasOverlay, false, hasSettingsGuard) }
             }
         }
         stopSelf()

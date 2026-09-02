@@ -1538,9 +1538,13 @@ private fun ParentLockTab(
                             // POST /children/permission-status) - BEDA dari toggle di atas yang cuma
                             // niat orang tua. Ini yang membuat pencabutan izin oleh anak (lihat
                             // diskusi desain) TERLIHAT, bukan cuma mencegahnya.
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier.horizontalScroll(rememberScrollState())
+                            ) {
                                 PermissionStatusLabel(stringResource(R.string.label_permission_lock), child.overlayPermissionGranted)
                                 PermissionStatusLabel(stringResource(R.string.label_permission_domain_block), child.vpnPermissionGranted)
+                                PermissionStatusLabel(stringResource(R.string.label_permission_settings_guard), child.guardPermissionGranted)
                             }
                         }
                     }

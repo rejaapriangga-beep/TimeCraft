@@ -63,6 +63,8 @@
     <string name="activity_overlay_permission_revoked">Izin Mode Kunci dicabut di HP anak</string>
     <string name="activity_vpn_permission_granted">Izin Blokir Domain aktif di HP anak</string>
     <string name="activity_vpn_permission_revoked">Izin Blokir Domain dicabut di HP anak</string>
+    <string name="activity_guard_permission_granted">Izin Proteksi Pengaturan aktif di HP anak</string>
+    <string name="activity_guard_permission_revoked">Izin Proteksi Pengaturan dicabut di HP anak</string>
     <string name="role_parent_suffix">" (Orang Tua) "</string>
     <string name="role_child_suffix">" (Anak) "</string>
 
@@ -241,6 +243,7 @@
     <string name="label_device_of_child">Perangkat %1$s</string>
     <string name="label_permission_lock">Izin Mode Kunci</string>
     <string name="label_permission_domain_block">Izin Blokir Domain</string>
+    <string name="label_permission_settings_guard">Izin Proteksi Pengaturan</string>
     <string name="status_permission_active">Aktif</string>
     <string name="status_permission_revoked">Dicabut anak</string>
     <string name="status_permission_unknown">Belum diketahui</string>
@@ -296,6 +299,16 @@
     <string name="desc_domain_block_permission_not_granted">Supaya orang tua bisa memblokir domain/situs tertentu di HP ini, izinkan koneksi VPN lokal berikut. Ini HANYA menyaring nama domain (DNS), tidak membaca isi trafik kamu.</string>
     <string name="action_allow_vpn">Izinkan Koneksi VPN Lokal</string>
     <string name="desc_domain_block_child_note">Daftar domain yang diblokir hanya bisa diatur oleh orang tua lewat Pengaturan.</string>
+
+    <!-- ChildScreen.kt: ChildLockTab - Proteksi Pengaturan (SettingsGuardAccessibilityService) -->
+    <string name="heading_settings_guard">Proteksi Pengaturan</string>
+    <string name="desc_settings_guard_permission_granted">TimeCraft akan mengusir balik kalau ada yang mencoba membuka Info Aplikasi TimeCraft atau mencabut izin ini lewat Pengaturan. Kamu bisa mematikannya kapan saja lewat Pengaturan &gt; Aksesibilitas (Safe Mode juga menonaktifkannya sementara).</string>
+    <string name="desc_settings_guard_permission_not_granted">Supaya lebih sulit mengubah izin Mode Kunci/Blokir Domain lewat Pengaturan tanpa sepengetahuan orang tua, aktifkan Accessibility Service berikut. Ini BUKAN pemblokiran total - hanya mengusir balik dari layar Pengaturan yang terkait TimeCraft.</string>
+    <string name="action_allow_settings_guard">Aktifkan Proteksi Pengaturan</string>
+    <string name="desc_settings_guard_child_note">Fitur ini opsional, diaktifkan orang tua kalau perlu - tidak mengubah aplikasi lain di HP kamu sama sekali.</string>
+    <string name="toast_settings_guard_blocked">Pengaturan ini dikelola orang tua di TimeCraft.</string>
+    <string name="accessibility_service_label">TimeCraft - Proteksi Pengaturan</string>
+    <string name="accessibility_service_description">Membantu orang tua menjaga agar izin Mode Kunci dan Blokir Domain TimeCraft tidak mudah dicabut - begitu aktif, TimeCraft otomatis menutup layar Pengaturan yang menyebut TimeCraft atau VPN dan mengarahkan kembali. Tidak membaca/menyimpan aktivitas lain di HP.</string>
     <string name="label_name">Nama</string>
     <string name="desc_logout_hint">Untuk keluar dari akun ini, gunakan tombol \"Keluar\" di pojok kanan atas.</string>
     <string name="heading_access_balance">Saldo Akses Hadiah</string>
