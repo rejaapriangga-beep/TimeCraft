@@ -17,7 +17,7 @@
 </head>
 <body>
   <h1>Kebijakan Privasi TimeCraft</h1>
-  <p class="updated">Terakhir diperbarui: 24 Agustus 2026</p>
+  <p class="updated">Terakhir diperbarui: 22 September 2026</p>
 
   <p>TimeCraft adalah aplikasi kontrol dan manajemen tugas keluarga yang dipakai secara privat oleh
   satu keluarga, dikelola sendiri oleh orang tua (pengelola akun). Halaman ini menjelaskan data apa
@@ -33,7 +33,7 @@
   <ul>
     <li><strong>Akun orang tua:</strong> nama, alamat email, dan kata sandi (disimpan dalam bentuk hash
       scrypt yang tidak bisa dibalik ke bentuk asli - server tidak pernah menyimpan kata sandi asli).</li>
-    <li><strong>Akun anak:</strong> nama dan PIN 6 digit (disimpan dalam bentuk hash, sama seperti kata
+    <li><strong>Akun anak:</strong> nama dan PIN 4-8 digit (disimpan dalam bentuk hash, sama seperti kata
       sandi orang tua).</li>
     <li><strong>Data tugas:</strong> judul, deskripsi, status, bukti penyelesaian tugas (foto/dokumen
       yang diunggah anak atau orang tua untuk verifikasi tugas).</li>
@@ -44,8 +44,13 @@
     <li><strong>Log aktivitas:</strong> catatan tindakan yang dilakukan orang tua (mis. mengunci
       perangkat, menyetujui tugas) untuk transparansi - hanya terlihat oleh orang tua di keluarga
       yang sama.</li>
-    <li><strong>Status kunci perangkat:</strong> status aktif/nonaktif dari fitur kunci perangkat yang
-      diaktifkan orang tua.</li>
+    <li><strong>Status kunci perangkat &amp; status izin sistem:</strong> status aktif/nonaktif dari
+      fitur kunci perangkat yang diaktifkan orang tua, dan status izin sistem Android terkait (Tampil
+      di atas aplikasi lain, VPN lokal, Accessibility Service - lihat bagian "Kontrol Perangkat" di
+      bawah) sebagaimana dilaporkan oleh perangkat anak sendiri.</li>
+    <li><strong>Daftar domain yang diblokir:</strong> daftar nama domain/situs (bukan riwayat penjelajahan
+      atau konten yang diakses) yang dipilih orang tua untuk difilter di perangkat anak - lihat bagian
+      "Blokir Domain" di bawah.</li>
   </ul>
 
   <h2>Bagaimana Data Digunakan</h2>
@@ -65,17 +70,31 @@
       Android Keystore (EncryptedSharedPreferences).</li>
   </ul>
 
-  <h2>Kontrol Perangkat (Fitur Kunci Perangkat)</h2>
-  <p>TimeCraft menyediakan fitur kunci perangkat yang dapat diaktifkan orang tua untuk membatasi
-  penggunaan HP anak. Fitur ini:</p>
+  <h2>Kontrol Perangkat</h2>
+  <p>TimeCraft menyediakan empat fitur kontrol perangkat, semuanya <strong>opsional</strong>, memerlukan
+  persetujuan MANUAL lewat dialog/halaman resmi sistem Android (tidak pernah aktif diam-diam), dan dapat
+  dicabut kapan saja oleh pengguna perangkat lewat Pengaturan sistem. Tidak satu pun dari fitur ini
+  merekam/menyimpan riwayat penjelajahan, isi pesan pribadi di luar TimeCraft, lokasi, atau konten
+  aplikasi lain - lihat rincian tiap fitur:</p>
   <ul>
-    <li>Menggunakan izin resmi Android (<em>Display over other apps / SYSTEM_ALERT_WINDOW</em>) yang
-      harus diberikan secara manual oleh pengguna lewat Pengaturan sistem - tidak pernah aktif diam-diam.</li>
-    <li>Selalu terlihat oleh pengguna perangkat: layar kunci ditampilkan penuh, ada notifikasi permanen
-      saat layanan kontrol aktif.</li>
-    <li>Bukan accessibility service, bukan root, bukan device admin/device owner tersembunyi, dan tidak
-      merekam aktivitas penjelajahan, pesan pribadi, lokasi, atau konten di luar aplikasi TimeCraft.</li>
-    <li>Izin ini dapat dicabut kapan saja oleh pengguna perangkat lewat Pengaturan sistem.</li>
+    <li><strong>Mode Kunci</strong> - memakai izin resmi Android <em>Display over other apps /
+      SYSTEM_ALERT_WINDOW</em>. Kalau diaktifkan orang tua, menampilkan layar kunci penuh di atas
+      aplikasi lain, dengan notifikasi permanen selama aktif.</li>
+    <li><strong>Blokir Domain</strong> - memakai VPN lokal resmi Android (<em>VpnService</em>, TIDAK
+      butuh root). VPN ini HANYA menyaring nama domain (DNS) yang diminta perangkat terhadap daftar
+      blokir yang diatur orang tua - TIDAK membaca, merekam, atau meneruskan isi trafik/konten apa pun
+      ke server TimeCraft. Trafik yang tidak terkait DNS tidak melewati VPN ini sama sekali.</li>
+    <li><strong>Proteksi Pengaturan</strong> (opsional, terpisah dari dua di atas) - memakai
+      <em>Accessibility Service</em> Android. Cakupannya SEMPIT dan spesifik: begitu diaktifkan,
+      layanan ini hanya memantau kapan layar Pengaturan sistem yang sedang dibuka menyebut "TimeCraft"
+      atau "VPN" (indikasi pengguna sedang mencoba mengubah izin TimeCraft lewat Info Aplikasi, daftar
+      Aksesibilitas, atau Pengaturan VPN), lalu otomatis kembali ke layar sebelumnya disertai
+      pemberitahuan singkat. Layanan ini TIDAK membaca, merekam, atau mengirim isi layar aplikasi lain
+      mana pun ke server TimeCraft - pemrosesan teks layar terjadi sepenuhnya di perangkat, dan tidak
+      ada isi layar yang disimpan atau dikirim ke mana pun.</li>
+    <li><strong>Proteksi Anti-Uninstall</strong> (opsional) - memakai Device Admin API resmi Android,
+      HANYA untuk mencegah aplikasi dihapus langsung tanpa dinonaktifkan dulu lewat Pengaturan sistem.
+      Tidak dipakai untuk mengunci layar, menghapus data, atau kontrol perangkat lain apa pun.</li>
   </ul>
 
   <h2>Berbagi Data dengan Pihak Ketiga</h2>
