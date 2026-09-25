@@ -1,7 +1,10 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scenes/game/game.gd" id="1_game"]
 [ext_resource type="Script" path="res://scripts/ui/board_view.gd" id="2_board"]
+[ext_resource type="Script" path="res://scripts/managers/dice_manager.gd" id="3_dice"]
+[ext_resource type="Script" path="res://scripts/managers/player_manager.gd" id="4_players"]
+[ext_resource type="Script" path="res://scripts/managers/board_manager.gd" id="5_board_mgr"]
 
 [node name="Game" type="Control"]
 layout_mode = 3
@@ -13,6 +16,18 @@ grow_vertical = 2
 script = ExtResource("1_game")
 
 [node name="Managers" type="Node" parent="."]
+
+[node name="DiceManager" type="Node" parent="Managers"]
+unique_name_in_owner = true
+script = ExtResource("3_dice")
+
+[node name="PlayerManager" type="Node" parent="Managers"]
+unique_name_in_owner = true
+script = ExtResource("4_players")
+
+[node name="BoardManager" type="Node" parent="Managers"]
+unique_name_in_owner = true
+script = ExtResource("5_board_mgr")
 
 [node name="UI" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -103,7 +118,6 @@ theme_override_constants/separation = 8
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
-disabled = true
 text = "LEMPAR DADU"
 
 [node name="ActionHint" type="Label" parent="UI/VBox/ActionPanel"]
@@ -111,5 +125,5 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 theme_override_font_sizes/font_size = 22
-text = "Dadu aktif di langkah 1.4"
+text = "Tap petak untuk melihat detail"
 horizontal_alignment = 1

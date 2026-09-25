@@ -1,7 +1,9 @@
 extends Control
 ## Layar permainan.
-## Langkah 1.1–1.3: menampilkan board, pemain aktif, dan daftar pemain.
-## Manager (TurnManager, DiceManager, dst.) akan ditambahkan ke node "Managers" mulai langkah 1.4.
+## Langkah 1.4–1.5: lempar dadu, token berjalan per petak, +bonus saat melewati START.
+##
+## Alur satu giliran untuk sementara diatur di _play_turn() di bawah.
+## Di langkah 1.6 alur ini dipindah ke TurnManager (dengan aturan dadu dobel dan state giliran).
 
 ## Dipakai jika scene ini dijalankan langsung (F6) tanpa lewat layar Setup.
 const TEST_PLAYERS := [
@@ -9,47 +11,106 @@ const TEST_PLAYERS := [
 	{"name": "Budi", "token": "dog"},
 ]
 
-var players: Array = []          # [{name, token, money}]
-var current_player_index: int = 0
+var is_busy: bool = false   # true selama animasi dadu/token berjalan
 
+@onready var dice_manager = %DiceManager
+@onready var player_manager = %PlayerManager
+@onready var board_manager = %BoardManager
 @onready var board_view = %BoardView
 @onready var turn_token_slot: CenterContainer = %TurnTokenSlot
 @onready var turn_name: Label = %TurnName
 @onready var turn_money: Label = %TurnMoney
 @onready var players_strip: GridContainer = %PlayersStrip
 @onready var menu_button: Button = %MenuButton
+@onready var roll_button: Button = %RollButton
 
 
 func _ready() -> void:
 	var starting_money := int(GameData.config.get("starting_money", 1500))
-	for p in SceneRouter.params.get("players", TEST_PLAYERS):
-		players.append({"name": p.name, "token": p.token, "money": starting_money})
+	player_manager.setup(SceneRouter.params.get("players", TEST_PLAYERS), starting_money)
+	for player in player_manager.players:
+		board_view.add_token(player.id, GameData.get_token(player.token_id), player.position)
 
 	board_view.tile_pressed.connect(_on_tile_pressed)
-	menu_button.pressed.connect(SceneRouter.go_back)   # Fase 1.10: diganti PauseMenu
+	player_manager.money_changed.connect(func(_player, _delta): _refresh_players())
+	player_manager.current_player_changed.connect(func(_player): _refresh_players())
+	roll_button.pressed.connect(_play_turn)
+	menu_button.pressed.connect(SceneRouter.go_back)   # langkah 1.10: diganti PauseMenu
 	_refresh_players()
+
+
+# ---------- Alur giliran (sementara, sebelum TurnManager) ----------
+
+func _play_turn() -> void:
+	if is_busy:
+		return
+	_set_busy(true)
+	var player: PlayerState = player_manager.get_current()
+
+	# 1. Lempar dadu + animasi
+	var roll: Dictionary = dice_manager.roll()
+	board_view.show_center_message(player.name, "Melempar dadu...")
+	await board_view.dice_view.play_roll(roll.die_1, roll.die_2)
+	player.stats.rolls += 1
+	player.stats.best_roll = maxi(player.stats.best_roll, roll.total)
+	board_view.show_center_message(player.name, "%d + %d = %d langkah" % [roll.die_1, roll.die_2, roll.total])
+
+	# 2. Token berjalan petak demi petak
+	var path: Array[int] = board_manager.build_move_path(player.position, roll.total)
+	await board_view.move_token(player.id, path)
+	player_manager.set_position(player, path[-1])
+
+	# 3. Bonus melewati / berhenti di START
+	var notes: Array[String] = []
+	if board_manager.passes_start(path):
+		var bonus := int(GameData.config.get("pass_start_bonus", 200))
+		player_manager.add_money(player, bonus)
+		player.stats.passed_start += 1
+		notes.append("Lewat START: +%s" % GameData.format_money(bonus))
+
+	# 4. Tampilkan petak tujuan. (Beli/sewa/pajak menyusul di langkah 1.7–1.8.)
+	var tile := GameData.get_tile(player.position)
+	notes.push_front("%s berhenti di sini" % player.name)
+	board_view.show_center_message(tile.name, "\n".join(notes))
+	board_view.select_tile(player.position)
+
+	# 5. Giliran pemain berikutnya
+	player_manager.next_player()
+	_set_busy(false)
+
+
+## Selama animasi: tombol dimatikan dan layar tidak boleh ditinggalkan.
+func _set_busy(busy: bool) -> void:
+	is_busy = busy
+	roll_button.disabled = busy
+	menu_button.disabled = busy
+
+
+## Dipanggil SceneRouter sebelum pindah layar (tombol MENU / Back Android).
+func can_leave() -> bool:
+	return not is_busy
 
 
 # ---------- Tampilan pemain ----------
 
 func _refresh_players() -> void:
-	var current: Dictionary = players[current_player_index]
-	var token := GameData.get_token(current.token)
+	var current: PlayerState = player_manager.get_current()
 
 	for child in turn_token_slot.get_children():
 		child.queue_free()
-	turn_token_slot.add_child(UIStyle.make_token_badge(token, 80))
+	turn_token_slot.add_child(UIStyle.make_token_badge(GameData.get_token(current.token_id), 80))
 	turn_name.text = current.name
 	turn_money.text = GameData.format_money(current.money)
+	board_view.set_active_token(current.id)
 
 	for child in players_strip.get_children():
 		child.queue_free()
-	for i in players.size():
-		players_strip.add_child(_make_player_chip(players[i], i == current_player_index))
+	for player in player_manager.players:
+		players_strip.add_child(_make_player_chip(player, player == current))
 
 
 ## Kartu kecil: token + nama + uang. Pemain aktif diberi garis oranye.
-func _make_player_chip(player: Dictionary, active: bool) -> Control:
+func _make_player_chip(player: PlayerState, active: bool) -> Control:
 	var chip := PanelContainer.new()
 	chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var border := UIStyle.ORANGE if active else UIStyle.LINE
@@ -60,7 +121,7 @@ func _make_player_chip(player: Dictionary, active: bool) -> Control:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	chip.add_child(row)
-	row.add_child(UIStyle.make_token_badge(GameData.get_token(player.token), 52))
+	row.add_child(UIStyle.make_token_badge(GameData.get_token(player.token_id), 52))
 
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL

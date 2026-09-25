@@ -30,6 +30,10 @@ func goto(scene_name: String, new_params: Dictionary = {}) -> void:
 
 
 func go_back() -> void:
+	# Layar boleh menolak ditinggalkan, mis. Game saat token masih berjalan.
+	var scene := get_tree().current_scene
+	if scene and scene.has_method("can_leave") and not scene.can_leave():
+		return
 	if current == "home":
 		get_tree().quit()
 	else:
