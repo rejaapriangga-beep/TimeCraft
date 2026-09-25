@@ -10,6 +10,14 @@
     "red": "#EF6F6C",
     "green": "#7BC47F"
   },
+  "group_names": {
+    "brown": "Coklat",
+    "light_blue": "Biru Muda",
+    "pink": "Merah Muda",
+    "orange": "Oranye",
+    "red": "Merah",
+    "green": "Hijau"
+  },
   "tiles": [
     {
       "index": 0,

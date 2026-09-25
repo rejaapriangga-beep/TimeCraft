@@ -42,6 +42,11 @@ func get_group_color(group: String) -> Color:
 	return Color.html(groups.get(group, "#CCCCCC"))
 
 
+## "brown" -> "Coklat". Nama grup ada di board JSON bagian group_names.
+func get_group_name(group: String) -> String:
+	return board.get("group_names", {}).get(group, group)
+
+
 # ---------- Token ----------
 
 func get_token(token_id: String) -> Dictionary:

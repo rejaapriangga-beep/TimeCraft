@@ -27,6 +27,12 @@ func add_money(player: PlayerState, amount: int) -> void:
 	money_changed.emit(player, amount)
 
 
+## Pindahkan uang dari satu pemain ke pemain lain (mis. bayar sewa).
+func transfer(from_player: PlayerState, to_player: PlayerState, amount: int) -> void:
+	add_money(from_player, -amount)
+	add_money(to_player, amount)
+
+
 func set_position(player: PlayerState, tile_index: int) -> void:
 	player.position = tile_index
 	position_changed.emit(player)

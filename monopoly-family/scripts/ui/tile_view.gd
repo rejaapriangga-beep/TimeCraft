@@ -29,6 +29,12 @@ var selected: bool = false:
 		selected = value
 		queue_redraw()
 
+## Warna token pemilik. Transparan = belum dimiliki siapa pun.
+var owner_color: Color = Color.TRANSPARENT:
+	set(value):
+		owner_color = value
+		queue_redraw()
+
 var _name_text: String = ""
 var _info_text: String = ""
 var _name_color: Color = UIStyle.TEXT
@@ -116,7 +122,12 @@ func _draw() -> void:
 	var tile_rect := Rect2(Vector2.ZERO, size).grow(-gap)
 	var radius := int(minf(size.x, size.y) * 0.12)
 	var border := UIStyle.ORANGE if selected else UIStyle.LINE
-	draw_style_box(UIStyle.rounded_box(_background_color(), radius, border, 4 if selected else 1), tile_rect)
+	var background := _background_color()
+	if _is_owned():
+		background = background.lerp(owner_color, 0.22)
+	draw_style_box(UIStyle.rounded_box(background, radius, border, 4 if selected else 1), tile_rect)
+	if _is_owned():
+		draw_style_box(UIStyle.rounded_box(owner_color, maxi(radius - 2, 2)), _outer_rect(tile_rect.grow(-4), _owner_strip_thickness()))
 
 	var band_color := get_band_color()
 	if band_color.a > 0.0:
@@ -129,6 +140,13 @@ func _draw() -> void:
 ## Area petak yang tidak tertutup pita, tempat teks digambar.
 func _content_rect() -> Rect2:
 	var content := Rect2(Vector2.ZERO, size).grow(-6)
+	if _is_owned():
+		var strip := _owner_strip_thickness() + 2
+		match side:
+			Side.BOTTOM: content = content.grow_side(SIDE_BOTTOM, -strip)
+			Side.TOP: content = content.grow_side(SIDE_TOP, -strip)
+			Side.LEFT: content = content.grow_side(SIDE_LEFT, -strip)
+			Side.RIGHT: content = content.grow_side(SIDE_RIGHT, -strip)
 	if get_band_color().a > 0.0:
 		var band := _band_thickness() + 2
 		match side:
@@ -196,3 +214,26 @@ func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
 		pressed.emit(index)
 		accept_event()
+
+
+# ---------- Tanda kepemilikan ----------
+
+func _is_owned() -> bool:
+	return owner_color.a > 0.0
+
+
+func _owner_strip_thickness() -> float:
+	return minf(size.x, size.y) * 0.12
+
+
+## Garis warna pemilik di sisi LUAR petak (kebalikan dari pita grup yang di sisi dalam).
+func _outer_rect(tile_rect: Rect2, thickness: float) -> Rect2:
+	match side:
+		Side.BOTTOM:
+			return Rect2(tile_rect.position.x, tile_rect.end.y - thickness, tile_rect.size.x, thickness)
+		Side.TOP:
+			return Rect2(tile_rect.position, Vector2(tile_rect.size.x, thickness))
+		Side.LEFT:
+			return Rect2(tile_rect.position, Vector2(thickness, tile_rect.size.y))
+		_:
+			return Rect2(tile_rect.end.x - thickness, tile_rect.position.y, thickness, tile_rect.size.y)

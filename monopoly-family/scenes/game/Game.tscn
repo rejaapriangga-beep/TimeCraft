@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scenes/game/game.gd" id="1_game"]
 [ext_resource type="Script" path="res://scripts/ui/board_view.gd" id="2_board"]
@@ -6,6 +6,8 @@
 [ext_resource type="Script" path="res://scripts/managers/player_manager.gd" id="4_players"]
 [ext_resource type="Script" path="res://scripts/managers/board_manager.gd" id="5_board_mgr"]
 [ext_resource type="Script" path="res://scripts/managers/turn_manager.gd" id="6_turn"]
+[ext_resource type="Script" path="res://scripts/managers/property_manager.gd" id="7_property"]
+[ext_resource type="PackedScene" path="res://scenes/game/PropertyCard.tscn" id="8_card"]
 
 [node name="Game" type="Control"]
 layout_mode = 3
@@ -29,6 +31,10 @@ script = ExtResource("4_players")
 [node name="BoardManager" type="Node" parent="Managers"]
 unique_name_in_owner = true
 script = ExtResource("5_board_mgr")
+
+[node name="PropertyManager" type="Node" parent="Managers"]
+unique_name_in_owner = true
+script = ExtResource("7_property")
 
 [node name="TurnManager" type="Node" parent="Managers"]
 unique_name_in_owner = true
@@ -132,3 +138,7 @@ theme_type_variation = &"MutedLabel"
 theme_override_font_sizes/font_size = 22
 text = "Tap petak untuk melihat detail"
 horizontal_alignment = 1
+
+[node name="PropertyCard" parent="." instance=ExtResource("8_card")]
+unique_name_in_owner = true
+layout_mode = 1

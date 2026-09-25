@@ -3,8 +3,8 @@ extends Control
 ##
 ## Tugas layar ini hanya TAMPILAN: tombol, label, board, animasi.
 ## Aturan dan urutan giliran ada di TurnManager (scripts/managers/turn_manager.gd).
-## TurnManager meminta animasi lewat 3 fungsi "view" di bawah:
-## animate_roll(), animate_move(), show_message().
+## TurnManager meminta animasi lewat 4 fungsi "view" di bawah:
+## animate_roll(), animate_move(), show_message(), ask_buy().
 
 const TurnManager := preload("res://scripts/managers/turn_manager.gd")
 
@@ -17,6 +17,7 @@ const TEST_PLAYERS := [
 @onready var dice_manager = %DiceManager
 @onready var player_manager = %PlayerManager
 @onready var board_manager = %BoardManager
+@onready var property_manager = %PropertyManager
 @onready var turn_manager: TurnManager = %TurnManager
 @onready var board_view = %BoardView
 @onready var turn_token_slot: CenterContainer = %TurnTokenSlot
@@ -25,6 +26,7 @@ const TEST_PLAYERS := [
 @onready var players_strip: GridContainer = %PlayersStrip
 @onready var menu_button: Button = %MenuButton
 @onready var action_button: Button = %ActionButton
+@onready var property_card = %PropertyCard
 
 
 func _ready() -> void:
@@ -35,12 +37,14 @@ func _ready() -> void:
 
 	board_view.tile_pressed.connect(_on_tile_pressed)
 	player_manager.money_changed.connect(func(_player, _delta): _refresh_players())
+	property_manager.property_bought.connect(_on_property_bought)
 	turn_manager.turn_started.connect(func(_player): _refresh_players())
 	turn_manager.state_changed.connect(_on_turn_state_changed)
 	action_button.pressed.connect(_on_action_pressed)
 	menu_button.pressed.connect(SceneRouter.go_back)   # langkah 1.10: diganti PauseMenu
 
-	turn_manager.setup(dice_manager, player_manager, board_manager, self)
+	property_manager.setup(player_manager)
+	turn_manager.setup(dice_manager, player_manager, board_manager, property_manager, self)
 	turn_manager.start_game()
 
 
@@ -89,6 +93,37 @@ func show_message(title: String, body: String) -> void:
 	board_view.show_center_message(title, body)
 
 
+## Tampilkan kartu BELI / LEWATI dan tunggu jawaban pemain. true = beli.
+func ask_buy(player: PlayerState, tile_index: int) -> bool:
+	return await property_card.ask(player, tile_index, _ownable_rows(player, tile_index))
+
+
+func _on_property_bought(player: PlayerState, tile_index: int) -> void:
+	board_view.set_tile_owner(tile_index, Color.html(GameData.get_token(player.token_id).color))
+	_refresh_players()
+
+
+## Baris info untuk kartu property, dari sudut pandang pemain yang sedang giliran.
+func _ownable_rows(player: PlayerState, tile_index: int) -> Array:
+	var tile := GameData.get_tile(tile_index)
+	var rows: Array = [["Harga", GameData.format_money(int(tile.price))]]
+	match String(tile.type):
+		"property":
+			var group_name := GameData.get_group_name(tile.group)
+			rows.append(["Sewa", "%s  (×2 jika satu grup lengkap)" % GameData.format_money(int(tile.rent))])
+			rows.append(["Grup %s" % group_name, "kamu punya %d dari %d" % [
+				property_manager.count_owned(player.id, "property", tile.group), property_manager.group_size(tile.group)]])
+		"station":
+			var table: Array = GameData.config.get("station_rent", [25, 50, 100, 200])
+			rows.append(["Sewa", " / ".join(table.map(func(rent): return GameData.format_money(int(rent))))])
+			rows.append(["Stasiunmu", "%d dari 4  (makin banyak, sewa makin besar)" % property_manager.count_owned(player.id, "station")])
+		"utility":
+			var multipliers: Array = GameData.config.get("utility_multiplier", [4, 10])
+			rows.append(["Sewa", "total dadu ×%d  (×%d jika punya 2)" % [int(multipliers[0]), int(multipliers[1])]])
+			rows.append(["Utilitasmu", "%d dari 2" % property_manager.count_owned(player.id, "utility")])
+	return rows
+
+
 # ---------- Tampilan pemain ----------
 
 func _refresh_players() -> void:
@@ -135,7 +170,10 @@ func _make_player_chip(player: PlayerState, active: bool) -> Control:
 	info.add_child(name_label)
 
 	var money_label := Label.new()
+	var asset_count: int = property_manager.owned_tiles(player.id).size()
 	money_label.text = GameData.format_money(player.money)
+	if asset_count > 0:
+		money_label.text += "  ·  %d aset" % asset_count
 	money_label.theme_type_variation = &"MutedLabel"
 	money_label.add_theme_font_size_override("font_size", 22)
 	info.add_child(money_label)
@@ -146,7 +184,20 @@ func _make_player_chip(player: PlayerState, active: bool) -> Control:
 
 func _on_tile_pressed(index: int) -> void:
 	var tile := GameData.get_tile(index)
-	board_view.show_center_message(tile.name, _describe_tile(tile))
+	var text := _describe_tile(tile)
+	if property_manager.is_ownable(index):
+		text = _owner_text(index) + "\n" + text
+	board_view.show_center_message(tile.name, text)
+
+
+func _owner_text(index: int) -> String:
+	var owner_id: int = property_manager.get_owner_id(index)
+	if owner_id < 0:
+		return "Belum ada pemilik"
+	var owner: PlayerState = player_manager.players[owner_id]
+	if GameData.get_tile(index).type == "utility":
+		return "Pemilik: %s" % owner.name
+	return "Pemilik: %s  ·  sewa sekarang %s" % [owner.name, GameData.format_money(property_manager.calculate_rent(index, 0))]
 
 
 func _describe_tile(tile: Dictionary) -> String:

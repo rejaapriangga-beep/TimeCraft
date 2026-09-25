@@ -6,14 +6,17 @@ extends Node
 ##       │            dadu dobel: LEMPAR LAGI (pemain sama) ◄──────┤
 ##       └───────────── SELESAI GILIRAN: pemain berikutnya ◄───────┘
 ##
+## Di dalam RESOLVING, giliran bisa berhenti di WAIT_DECISION (menunggu BELI / LEWATI).
+##
 ## TurnManager tidak menyentuh tombol/label. Untuk animasi dan pesan, ia meminta
-## "view" (layar Game) lewat 3 fungsi: animate_roll(), animate_move(), show_message().
+## "view" (layar Game) lewat 4 fungsi: animate_roll(), animate_move(), show_message(),
+## dan ask_buy() (menampilkan kartu BELI / LEWATI lalu menunggu jawaban).
 ## Layar Game yang memutuskan bagaimana semua itu digambar.
 
 signal state_changed(state: State)
 signal turn_started(player: PlayerState)
 
-enum State { WAIT_ROLL, ROLLING, MOVING, RESOLVING, WAIT_END, GAME_OVER }
+enum State { WAIT_ROLL, ROLLING, MOVING, RESOLVING, WAIT_DECISION, WAIT_END, GAME_OVER }
 
 var state: State = State.WAIT_ROLL
 var doubles_in_row: int = 0       # berapa kali dobel berturut-turut di giliran ini
@@ -23,13 +26,15 @@ var round_number: int = 1         # ronde ke-berapa (dipakai batas ronde di lang
 var dice_manager: Node
 var player_manager: Node
 var board_manager: Node
+var property_manager: Node
 var view: Node
 
 
-func setup(dice: Node, players: Node, board: Node, game_view: Node) -> void:
+func setup(dice: Node, players: Node, board: Node, properties: Node, game_view: Node) -> void:
 	dice_manager = dice
 	player_manager = players
 	board_manager = board
+	property_manager = properties
 	view = game_view
 
 
@@ -125,7 +130,7 @@ func _roll_and_move() -> void:
 		player_manager.add_money(player, bonus)
 		player.stats.passed_start += 1
 		notes.append("Lewat START: +%s" % GameData.format_money(bonus))
-	await _resolve_tile(player, notes)
+	await _resolve_tile(player, notes, roll.total)
 
 	# 5. Dobel = boleh lempar lagi (kecuali baru saja masuk penjara)
 	can_roll_again = roll.is_double and not player.in_jail
@@ -135,10 +140,38 @@ func _roll_and_move() -> void:
 	_set_state(State.WAIT_END)
 
 
-## Efek petak tempat pemain berhenti.
-## Langkah 1.7: beli & sewa property. Langkah 1.8: pajak, stasiun, utilitas, penjara.
-func _resolve_tile(_player: PlayerState, _notes: Array[String]) -> void:
-	pass
+## Efek petak tempat pemain berhenti. Hasilnya ditambahkan ke notes (pesan di tengah board).
+## Langkah 1.7: beli & sewa (property, stasiun, utilitas).
+## Langkah 1.8: pajak, petak Masuk Penjara.
+func _resolve_tile(player: PlayerState, notes: Array[String], dice_total: int) -> void:
+	var tile_index := player.position
+	if property_manager.is_ownable(tile_index):
+		await _resolve_ownable(player, tile_index, notes, dice_total)
+
+
+func _resolve_ownable(player: PlayerState, tile_index: int, notes: Array[String], dice_total: int) -> void:
+	var owner_id: int = property_manager.get_owner_id(tile_index)
+	var price: int = property_manager.get_price(tile_index)
+
+	if owner_id < 0:
+		# Belum ada pemilik: tawarkan untuk dibeli
+		if not property_manager.can_afford(player, tile_index):
+			notes.append("Uang tidak cukup untuk membeli (%s)" % GameData.format_money(price))
+			return
+		_set_state(State.WAIT_DECISION)
+		var wants_to_buy: bool = await view.ask_buy(player, tile_index)
+		_set_state(State.RESOLVING)
+		if wants_to_buy:
+			property_manager.buy(player, tile_index)
+			notes.append("Dibeli seharga %s" % GameData.format_money(price))
+		else:
+			notes.append("Tidak dibeli")
+	elif owner_id == player.id:
+		notes.append("Ini milikmu sendiri")
+	else:
+		var amount: int = property_manager.pay_rent(player, tile_index, dice_total)
+		var receiver: PlayerState = player_manager.players[owner_id]
+		notes.append("Bayar sewa %s ke %s" % [GameData.format_money(amount), receiver.name])
 
 
 func _send_to_jail(player: PlayerState) -> void:

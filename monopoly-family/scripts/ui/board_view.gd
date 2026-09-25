@@ -179,6 +179,11 @@ func _on_tile_pressed(index: int) -> void:
 	tile_pressed.emit(index)
 
 
+## Tandai pemilik petak dengan warna token-nya. Color.TRANSPARENT = hapus tanda.
+func set_tile_owner(index: int, color: Color) -> void:
+	tile_views[index].owner_color = color
+
+
 ## Sorot satu petak (garis oranye). -1 = hapus sorotan.
 func select_tile(index: int) -> void:
 	if selected_index >= 0:

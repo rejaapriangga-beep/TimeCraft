@@ -373,7 +373,7 @@ WAIT_ROLL ──LEMPAR──► ROLLING ──► MOVING ──► RESOLVING ─
 
 - Dobel 3× berturut-turut di satu giliran → langsung ke Penjara, tidak berjalan, tidak
   dapat lempar lagi.
-- Langkah 1.7 menambah `WAIT_DECISION` di dalam `RESOLVING` (menunggu BELI / LEWATI).
+- `WAIT_DECISION` (di dalam `RESOLVING`): menunggu pemain menekan BELI / LEWATI di kartu property.
 - Tombol hanya aktif di `WAIT_ROLL` dan `WAIT_END`, sehingga pemain tidak bisa menekan dua
   kali saat animasi. Tombol MENU / Back Android juga ditahan selama animasi.
 
@@ -571,8 +571,8 @@ sebelum langkah sebelumnya berjalan.
 | 1.4 | `DiceManager` + `DiceView` | Tombol ROLL → dadu beranimasi, angka acak |
 | 1.5 | `PlayerManager` + `TokenView`, gerak per petak | Token jalan sesuai dadu, +200 lewat START |
 | 1.6 | `TurnManager` (state machine) + TopBar + PlayersStrip | Giliran berganti 2–4 pemain |
-| 1.7 | `PropertyManager`: beli & sewa + PropertyCard | Bisa beli, bayar sewa, sewa ×2 grup lengkap |
-| 1.8 | Pajak, stasiun, utilitas, penjara, masuk penjara | Semua tile punya efek |
+| 1.7 | `PropertyManager`: beli & sewa + PropertyCard (property, stasiun, utilitas) | Bisa beli, bayar sewa, sewa ×2 grup lengkap, sewa stasiun & utilitas |
+| 1.8 | Pajak, petak Masuk Penjara, aturan keluar penjara | Semua tile punya efek |
 | 1.9 | Bangkrut + pemenang + layar Hasil + Main Lagi | Satu game penuh bisa selesai |
 | 1.10 | PassDeviceOverlay, PauseMenu, SFX dasar | Siap dicoba bersama keluarga |
 | 1.11 | Export APK & uji di HP asli | APK terpasang di Android |

@@ -10,6 +10,7 @@ Proyek ini terpisah dari aplikasi TimeCraft di root repo.
 - [`docs/LANGKAH-1.1-1.3.md`](docs/LANGKAH-1.1-1.3.md) — cara memasang & penjelasan kode langkah 1.1–1.3
 - [`docs/LANGKAH-1.4-1.5.md`](docs/LANGKAH-1.4-1.5.md) — dadu & token bergerak
 - [`docs/LANGKAH-1.6.md`](docs/LANGKAH-1.6.md) — sistem giliran (TurnManager)
+- [`docs/LANGKAH-1.7.md`](docs/LANGKAH-1.7.md) — beli & sewa
 
 ## Progres Fase 1
 - [x] 1.1 Setup proyek, orientasi portrait, theme (warna + font)
@@ -18,8 +19,8 @@ Proyek ini terpisah dari aplikasi TimeCraft di root repo.
 - [x] 1.4 Dadu
 - [x] 1.5 Token bergerak per petak
 - [x] 1.6 Sistem giliran (dobel, 3× dobel masuk penjara)
-- [ ] 1.7 Beli & sewa property
-- [ ] 1.8 Pajak, stasiun, utilitas, penjara
+- [x] 1.7 Beli & sewa (property, stasiun, utilitas)
+- [ ] 1.8 Pajak, petak Masuk Penjara, aturan keluar penjara
 - [ ] 1.9 Bangkrut, pemenang, layar hasil
 - [ ] 1.10 Oper HP, menu pause, efek suara
 - [ ] 1.11 Export APK
