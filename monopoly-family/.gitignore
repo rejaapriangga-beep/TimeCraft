@@ -1,0 +1,6 @@
+# Cache Godot (dibuat ulang otomatis saat proyek dibuka)
+.godot/
+# Hasil export
+/build/
+*.apk
+*.aab

@@ -1,0 +1,43 @@
+; File pengaturan proyek Godot. Biasanya diubah lewat menu Project > Project Settings,
+; tetapi aman juga diedit manual.
+
+config_version=5
+
+[application]
+
+config/name="Monopoly Family"
+config/description="Board game keluarga bergaya Monopoly (nama kerja)."
+run/main_scene="res://scenes/home/Home.tscn"
+config/features=PackedStringArray("4.4", "GL Compatibility")
+config/quit_on_go_back=false
+
+[autoload]
+
+GameData="*res://scripts/autoload/game_data.gd"
+SceneRouter="*res://scripts/autoload/scene_router.gd"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/size/window_width_override=405
+window/size/window_height_override=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
+
+[gui]
+
+theme/custom="res://assets/themes/main_theme.tres"
+common/drop_mouse_on_gui_input_disabled=true
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=true
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0.9647, 0.9686, 0.9843, 1)

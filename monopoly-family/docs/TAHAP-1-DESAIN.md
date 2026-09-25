@@ -112,8 +112,8 @@ Urutan lengkap ada di [`../data/board_classic.json`](../data/board_classic.json)
 
 Setiap pemain punya: nama, token, uang, daftar property, posisi, status penjara, statistik game.
 
-Token awal (gratis): Kucing, Anjing, Mobil. Token yang bisa di-unlock: Kereta, Roket,
-Panda, Dinosaurus. **Semua token hanya kosmetik** — tidak ada kelebihan gameplay.
+Token awal (gratis): Kucing, Anjing, Mobil, Kereta (4 token, cukup untuk 4 pemain).
+Token yang bisa di-unlock: Roket, Panda, Dinosaurus. **Semua token hanya kosmetik** — tidak ada kelebihan gameplay.
 
 ### 1.6 Progression (Fase 2)
 
@@ -426,7 +426,7 @@ monopoly-family/                  # root proyek Godot (berisi project.godot)
 ├── data/
 │   ├── board_classic.json        32 tile
 │   ├── events.json               kartu Kesempatan        (Fase 3)
-│   ├── tokens.json               daftar token + syarat unlock  (Fase 2)
+│   ├── tokens.json               daftar token (Fase 2: + syarat unlock)
 │   ├── dice_skins.json                                   (Fase 2)
 │   ├── missions.json                                     (Fase 2)
 │   └── config.json               uang awal, bonus START, dll.
@@ -436,9 +436,10 @@ monopoly-family/                  # root proyek Godot (berisi project.godot)
 │   │                             board_manager.gd, dice_manager.gd, property_manager.gd,
 │   │                             event_manager.gd, bot_controller.gd
 │   ├── models/                   player_state.gd, tile_state.gd  (class data sederhana)
-│   └── ui/                       ui_manager.gd, board_view.gd, tile_view.gd, token_view.gd,
-│                                 dice_view.gd, player_chip.gd, property_card.gd, ...
-├── scenes/                       (lihat bagian 5)
+│   └── ui/                       komponen UI yang dipakai ulang: ui_style.gd, board_view.gd,
+│                                 tile_view.gd, token_view.gd, dice_view.gd, ...
+├── scenes/                       (lihat bagian 5) — script khusus satu layar disimpan di
+│                                 sebelah scene-nya, mis. scenes/home/home.gd
 └── docs/
     └── TAHAP-1-DESAIN.md         dokumen ini
 ```

@@ -15,5 +15,6 @@
     4,
     10
   ],
-  "default_round_limit": 0
+  "default_round_limit": 0,
+  "currency_symbol": "$"
 }
