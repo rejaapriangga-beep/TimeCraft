@@ -1,0 +1,375 @@
+{
+  "id": "classic_city",
+  "name": "Classic City",
+  "size": 32,
+  "groups": {
+    "brown": "#A47551",
+    "light_blue": "#8ECAE6",
+    "pink": "#F4A6C1",
+    "orange": "#F7B267",
+    "red": "#EF6F6C",
+    "green": "#7BC47F"
+  },
+  "tiles": [
+    {
+      "index": 0,
+      "type": "start",
+      "name": "START",
+      "short_name": "START"
+    },
+    {
+      "index": 1,
+      "type": "property",
+      "name": "Jl. Melati",
+      "short_name": "Melati",
+      "group": "brown",
+      "price": 60,
+      "rent": 4,
+      "upgrade_cost": 50,
+      "rent_levels": [
+        4,
+        20,
+        60,
+        180
+      ]
+    },
+    {
+      "index": 2,
+      "type": "event",
+      "name": "Kesempatan",
+      "short_name": "?"
+    },
+    {
+      "index": 3,
+      "type": "property",
+      "name": "Jl. Mawar",
+      "short_name": "Mawar",
+      "group": "brown",
+      "price": 80,
+      "rent": 6,
+      "upgrade_cost": 50,
+      "rent_levels": [
+        6,
+        30,
+        90,
+        270
+      ]
+    },
+    {
+      "index": 4,
+      "type": "station",
+      "name": "Stasiun Utara",
+      "short_name": "St. Utara",
+      "price": 200
+    },
+    {
+      "index": 5,
+      "type": "property",
+      "name": "Jl. Kenanga",
+      "short_name": "Kenanga",
+      "group": "light_blue",
+      "price": 100,
+      "rent": 8,
+      "upgrade_cost": 50,
+      "rent_levels": [
+        8,
+        40,
+        120,
+        360
+      ]
+    },
+    {
+      "index": 6,
+      "type": "property",
+      "name": "Jl. Anggrek",
+      "short_name": "Anggrek",
+      "group": "light_blue",
+      "price": 100,
+      "rent": 8,
+      "upgrade_cost": 50,
+      "rent_levels": [
+        8,
+        40,
+        120,
+        360
+      ]
+    },
+    {
+      "index": 7,
+      "type": "property",
+      "name": "Jl. Dahlia",
+      "short_name": "Dahlia",
+      "group": "light_blue",
+      "price": 120,
+      "rent": 10,
+      "upgrade_cost": 50,
+      "rent_levels": [
+        10,
+        50,
+        150,
+        450
+      ]
+    },
+    {
+      "index": 8,
+      "type": "jail",
+      "name": "Penjara",
+      "short_name": "Penjara"
+    },
+    {
+      "index": 9,
+      "type": "property",
+      "name": "Taman Kota",
+      "short_name": "Taman",
+      "group": "pink",
+      "price": 140,
+      "rent": 12,
+      "upgrade_cost": 100,
+      "rent_levels": [
+        12,
+        60,
+        180,
+        500
+      ]
+    },
+    {
+      "index": 10,
+      "type": "utility",
+      "name": "Perusahaan Listrik",
+      "short_name": "Listrik",
+      "price": 150
+    },
+    {
+      "index": 11,
+      "type": "property",
+      "name": "Alun-Alun",
+      "short_name": "Alun-Alun",
+      "group": "pink",
+      "price": 140,
+      "rent": 12,
+      "upgrade_cost": 100,
+      "rent_levels": [
+        12,
+        60,
+        180,
+        500
+      ]
+    },
+    {
+      "index": 12,
+      "type": "station",
+      "name": "Stasiun Timur",
+      "short_name": "St. Timur",
+      "price": 200
+    },
+    {
+      "index": 13,
+      "type": "property",
+      "name": "Kebun Raya",
+      "short_name": "Kebun Raya",
+      "group": "pink",
+      "price": 160,
+      "rent": 14,
+      "upgrade_cost": 100,
+      "rent_levels": [
+        14,
+        70,
+        200,
+        550
+      ]
+    },
+    {
+      "index": 14,
+      "type": "event",
+      "name": "Kesempatan",
+      "short_name": "?"
+    },
+    {
+      "index": 15,
+      "type": "property",
+      "name": "Pasar Baru",
+      "short_name": "Pasar Baru",
+      "group": "orange",
+      "price": 180,
+      "rent": 16,
+      "upgrade_cost": 100,
+      "rent_levels": [
+        16,
+        80,
+        220,
+        600
+      ]
+    },
+    {
+      "index": 16,
+      "type": "free_parking",
+      "name": "Parkir Gratis",
+      "short_name": "Parkir"
+    },
+    {
+      "index": 17,
+      "type": "property",
+      "name": "Jl. Pelabuhan",
+      "short_name": "Pelabuhan",
+      "group": "orange",
+      "price": 180,
+      "rent": 16,
+      "upgrade_cost": 100,
+      "rent_levels": [
+        16,
+        80,
+        220,
+        600
+      ]
+    },
+    {
+      "index": 18,
+      "type": "property",
+      "name": "Jl. Mercusuar",
+      "short_name": "Mercusuar",
+      "group": "orange",
+      "price": 200,
+      "rent": 18,
+      "upgrade_cost": 100,
+      "rent_levels": [
+        18,
+        90,
+        250,
+        700
+      ]
+    },
+    {
+      "index": 19,
+      "type": "tax",
+      "name": "Pajak Kota",
+      "short_name": "Pajak",
+      "amount": 100
+    },
+    {
+      "index": 20,
+      "type": "station",
+      "name": "Stasiun Selatan",
+      "short_name": "St. Selatan",
+      "price": 200
+    },
+    {
+      "index": 21,
+      "type": "property",
+      "name": "Jl. Merdeka",
+      "short_name": "Merdeka",
+      "group": "red",
+      "price": 220,
+      "rent": 20,
+      "upgrade_cost": 150,
+      "rent_levels": [
+        20,
+        100,
+        300,
+        750
+      ]
+    },
+    {
+      "index": 22,
+      "type": "property",
+      "name": "Jl. Pahlawan",
+      "short_name": "Pahlawan",
+      "group": "red",
+      "price": 220,
+      "rent": 20,
+      "upgrade_cost": 150,
+      "rent_levels": [
+        20,
+        100,
+        300,
+        750
+      ]
+    },
+    {
+      "index": 23,
+      "type": "property",
+      "name": "Jl. Sudirman",
+      "short_name": "Sudirman",
+      "group": "red",
+      "price": 240,
+      "rent": 22,
+      "upgrade_cost": 150,
+      "rent_levels": [
+        22,
+        110,
+        330,
+        800
+      ]
+    },
+    {
+      "index": 24,
+      "type": "go_to_jail",
+      "name": "Masuk Penjara",
+      "short_name": "Ke Penjara"
+    },
+    {
+      "index": 25,
+      "type": "event",
+      "name": "Kesempatan",
+      "short_name": "?"
+    },
+    {
+      "index": 26,
+      "type": "property",
+      "name": "Bukit Indah",
+      "short_name": "Bukit Indah",
+      "group": "green",
+      "price": 300,
+      "rent": 28,
+      "upgrade_cost": 200,
+      "rent_levels": [
+        28,
+        150,
+        450,
+        1000
+      ]
+    },
+    {
+      "index": 27,
+      "type": "utility",
+      "name": "Perusahaan Air",
+      "short_name": "Air",
+      "price": 150
+    },
+    {
+      "index": 28,
+      "type": "station",
+      "name": "Stasiun Barat",
+      "short_name": "St. Barat",
+      "price": 200
+    },
+    {
+      "index": 29,
+      "type": "event",
+      "name": "Kesempatan",
+      "short_name": "?"
+    },
+    {
+      "index": 30,
+      "type": "tax",
+      "name": "Pajak Mewah",
+      "short_name": "Pajak Mewah",
+      "amount": 150
+    },
+    {
+      "index": 31,
+      "type": "property",
+      "name": "Puncak Permai",
+      "short_name": "Puncak",
+      "group": "green",
+      "price": 350,
+      "rent": 35,
+      "upgrade_cost": 200,
+      "rent_levels": [
+        35,
+        175,
+        500,
+        1100
+      ]
+    }
+  ]
+}
