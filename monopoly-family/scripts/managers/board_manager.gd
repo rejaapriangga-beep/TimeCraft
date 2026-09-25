@@ -12,6 +12,14 @@ func build_move_path(from_index: int, steps: int) -> Array[int]:
 	return path
 
 
+## Index petak pertama dengan type tertentu, mis. find_tile_index("jail") -> 8. -1 jika tidak ada.
+func find_tile_index(type: String) -> int:
+	for i in GameData.get_board_size():
+		if GameData.get_tile(i).type == type:
+			return i
+	return -1
+
+
 ## True jika jalur melewati atau berhenti di START (petak 0).
 func passes_start(path: Array[int]) -> bool:
 	return path.has(0)

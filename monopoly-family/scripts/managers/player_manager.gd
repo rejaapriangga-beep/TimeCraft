@@ -32,6 +32,14 @@ func set_position(player: PlayerState, tile_index: int) -> void:
 	position_changed.emit(player)
 
 
+## Pindahkan pemain ke Penjara (tanpa bonus START).
+## Aturan keluar penjara (bayar denda / coba dobel) dibuat di langkah 1.8.
+func send_to_jail(player: PlayerState, jail_index: int) -> void:
+	player.in_jail = true
+	player.jail_turns = 0
+	set_position(player, jail_index)
+
+
 ## Pindah ke pemain berikutnya yang belum bangkrut.
 func next_player() -> PlayerState:
 	for i in players.size():

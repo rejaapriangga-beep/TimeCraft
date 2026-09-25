@@ -75,9 +75,8 @@ Contoh: `PlayerManager.add_money()` tidak menyentuh label uang; ia memancarkan s
 | Bonus START | `data/config.json` → `pass_start_bonus` |
 | Warna titik dadu | `scripts/ui/dice_view.gd` → `UIStyle.NAVY` di `_draw_die()` |
 
-**Uji dengan hasil dadu tertentu:** di `game.gd`, tambahkan sementara baris
-`dice_manager.force_next(6, 6)` tepat sebelum `var roll: Dictionary = dice_manager.roll()`.
-Hapus lagi setelah selesai menguji.
+**Uji dengan hasil dadu tertentu:** lihat `LANGKAH-1.6.md` (sejak langkah 1.6 alur giliran
+pindah ke TurnManager).
 
 ---
 

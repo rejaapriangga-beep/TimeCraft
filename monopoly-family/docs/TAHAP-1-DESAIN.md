@@ -303,7 +303,10 @@ Result
    state dan menggambar ulang. Ini membuat bot, save, dan debugging jauh lebih mudah.
 2. **Satu manager = satu tanggung jawab.** Tidak ada script raksasa.
 3. **Komunikasi lewat signal.** Manager memancarkan signal, UI mendengarkan.
-   Manager tidak memanggil node UI secara langsung.
+   Manager tidak memanggil node UI (tombol, label) secara langsung. Satu pengecualian:
+   TurnManager perlu *menunggu* animasi, jadi ia memanggil 3 fungsi "view" milik layar
+   Game (`animate_roll`, `animate_move`, `show_message`). Layar Game yang memutuskan
+   bagaimana semuanya digambar.
 4. **Data game dari JSON.** Harga, sewa, nama tile, event, reward → file JSON, bukan
    ditulis di dalam kode.
 
@@ -324,7 +327,7 @@ Result
 
 | Manager | Tugas |
 |---|---|
-| `GameManager` | "Sutradara": memulai game, menyambungkan semua manager, cek kondisi menang |
+| `GameManager` | "Sutradara": memulai game, menyambungkan semua manager, cek kondisi menang. Fase 1: peran ini dipegang `game.gd` (langkah 1.9 menambah cek pemenang) |
 | `TurnManager` | State giliran: siapa aktif, fase giliran, double, pindah pemain |
 | `PlayerManager` | Data pemain: uang, posisi, penjara, bangkrut, statistik |
 | `BoardManager` | Data tile, hitung posisi baru, lewat START, posisi pixel tiap tile |
@@ -332,15 +335,17 @@ Result
 | `PropertyManager` | Kepemilikan, beli, hitung sewa, (Fase 3: upgrade) |
 | `EventManager` | Ambil kartu event & terapkan efek (Fase 3) |
 | `BotController` | Memutuskan aksi untuk pemain bot (Fase 3) |
-| `UIManager` | Menghubungkan signal ke node UI: tampilkan popup, update HUD |
+| `UIManager` | Menghubungkan signal ke node UI: tampilkan popup, update HUD. Fase 1: peran ini dipegang `game.gd` |
 
 ### 4.3 Alur satu giliran (siapa memanggil siapa)
 
 ```
-UI: tombol ROLL ditekan
+UI: tombol LEMPAR DADU ditekan
   → TurnManager.request_roll()
-      → DiceManager.roll()                    ──signal── dice_rolled(d1, d2)
-      → BoardManager.move(player, d1+d2)      ──signal── token_moved / passed_start
+      → DiceManager.roll()                    → await view.animate_roll()
+      → dobel ke-3?                           → PlayerManager.send_to_jail(), selesai
+      → BoardManager.build_move_path()        → await view.animate_move()
+      → PlayerManager.set_position()
       → PlayerManager.add_money(+200) jika lewat START
       → TurnManager.resolve_tile(tile)
           ├─ property kosong  → signal buy_offer(tile)      → UI: PropertyCard
@@ -350,22 +355,27 @@ UI: tombol ROLL ditekan
           └─ masuk penjara    → PlayerManager.send_to_jail()
       → PlayerManager.check_bankrupt()
       → GameManager.check_winner()
-      → TurnManager.end_turn()  ──signal── turn_started(next_player)
+      → state WAIT_END: tombol "SELESAI GILIRAN" (atau "DOBEL! LEMPAR LAGI")
+UI: tombol SELESAI GILIRAN ditekan
+  → TurnManager.request_end_turn() ──signal── turn_started(next_player)
                                           → UI: PassDeviceOverlay / HUD
 ```
 
 ### 4.4 State machine giliran (TurnManager)
 
 ```
-WAIT_ROLL ──roll──► ROLLING ──► MOVING ──► RESOLVE_TILE ──► WAIT_DECISION
-                                                                  │
-      ▲                                                           ▼
-      └──── (double) ◄───────────────────────────────────── END_TURN ──► GAME_OVER
-                      (bukan double) → pemain berikutnya ──► WAIT_ROLL
+WAIT_ROLL ──LEMPAR──► ROLLING ──► MOVING ──► RESOLVING ──► WAIT_END
+    ▲                                                          │
+    │              dobel: LEMPAR LAGI (pemain sama) ◄──────────┤
+    └──────────── SELESAI GILIRAN: pemain berikutnya ◄─────────┘
+                                          (langkah 1.9: pemenang → GAME_OVER)
 ```
 
-Tombol UI hanya aktif di state yang sesuai (ROLL hanya di `WAIT_ROLL`), sehingga pemain
-tidak bisa menekan dua kali saat animasi.
+- Dobel 3× berturut-turut di satu giliran → langsung ke Penjara, tidak berjalan, tidak
+  dapat lempar lagi.
+- Langkah 1.7 menambah `WAIT_DECISION` di dalam `RESOLVING` (menunggu BELI / LEWATI).
+- Tombol hanya aktif di `WAIT_ROLL` dan `WAIT_END`, sehingga pemain tidak bisa menekan dua
+  kali saat animasi. Tombol MENU / Back Android juga ditahan selama animasi.
 
 ---
 

@@ -1,9 +1,12 @@
 extends Control
 ## Layar permainan.
-## Langkah 1.4–1.5: lempar dadu, token berjalan per petak, +bonus saat melewati START.
 ##
-## Alur satu giliran untuk sementara diatur di _play_turn() di bawah.
-## Di langkah 1.6 alur ini dipindah ke TurnManager (dengan aturan dadu dobel dan state giliran).
+## Tugas layar ini hanya TAMPILAN: tombol, label, board, animasi.
+## Aturan dan urutan giliran ada di TurnManager (scripts/managers/turn_manager.gd).
+## TurnManager meminta animasi lewat 3 fungsi "view" di bawah:
+## animate_roll(), animate_move(), show_message().
+
+const TurnManager := preload("res://scripts/managers/turn_manager.gd")
 
 ## Dipakai jika scene ini dijalankan langsung (F6) tanpa lewat layar Setup.
 const TEST_PLAYERS := [
@@ -11,18 +14,17 @@ const TEST_PLAYERS := [
 	{"name": "Budi", "token": "dog"},
 ]
 
-var is_busy: bool = false   # true selama animasi dadu/token berjalan
-
 @onready var dice_manager = %DiceManager
 @onready var player_manager = %PlayerManager
 @onready var board_manager = %BoardManager
+@onready var turn_manager: TurnManager = %TurnManager
 @onready var board_view = %BoardView
 @onready var turn_token_slot: CenterContainer = %TurnTokenSlot
 @onready var turn_name: Label = %TurnName
 @onready var turn_money: Label = %TurnMoney
 @onready var players_strip: GridContainer = %PlayersStrip
 @onready var menu_button: Button = %MenuButton
-@onready var roll_button: Button = %RollButton
+@onready var action_button: Button = %ActionButton
 
 
 func _ready() -> void:
@@ -33,62 +35,58 @@ func _ready() -> void:
 
 	board_view.tile_pressed.connect(_on_tile_pressed)
 	player_manager.money_changed.connect(func(_player, _delta): _refresh_players())
-	player_manager.current_player_changed.connect(func(_player): _refresh_players())
-	roll_button.pressed.connect(_play_turn)
+	turn_manager.turn_started.connect(func(_player): _refresh_players())
+	turn_manager.state_changed.connect(_on_turn_state_changed)
+	action_button.pressed.connect(_on_action_pressed)
 	menu_button.pressed.connect(SceneRouter.go_back)   # langkah 1.10: diganti PauseMenu
-	_refresh_players()
+
+	turn_manager.setup(dice_manager, player_manager, board_manager, self)
+	turn_manager.start_game()
 
 
-# ---------- Alur giliran (sementara, sebelum TurnManager) ----------
+# ---------- Tombol aksi ----------
 
-func _play_turn() -> void:
-	if is_busy:
-		return
-	_set_busy(true)
-	var player: PlayerState = player_manager.get_current()
-
-	# 1. Lempar dadu + animasi
-	var roll: Dictionary = dice_manager.roll()
-	board_view.show_center_message(player.name, "Melempar dadu...")
-	await board_view.dice_view.play_roll(roll.die_1, roll.die_2)
-	player.stats.rolls += 1
-	player.stats.best_roll = maxi(player.stats.best_roll, roll.total)
-	board_view.show_center_message(player.name, "%d + %d = %d langkah" % [roll.die_1, roll.die_2, roll.total])
-
-	# 2. Token berjalan petak demi petak
-	var path: Array[int] = board_manager.build_move_path(player.position, roll.total)
-	await board_view.move_token(player.id, path)
-	player_manager.set_position(player, path[-1])
-
-	# 3. Bonus melewati / berhenti di START
-	var notes: Array[String] = []
-	if board_manager.passes_start(path):
-		var bonus := int(GameData.config.get("pass_start_bonus", 200))
-		player_manager.add_money(player, bonus)
-		player.stats.passed_start += 1
-		notes.append("Lewat START: +%s" % GameData.format_money(bonus))
-
-	# 4. Tampilkan petak tujuan. (Beli/sewa/pajak menyusul di langkah 1.7–1.8.)
-	var tile := GameData.get_tile(player.position)
-	notes.push_front("%s berhenti di sini" % player.name)
-	board_view.show_center_message(tile.name, "\n".join(notes))
-	board_view.select_tile(player.position)
-
-	# 5. Giliran pemain berikutnya
-	player_manager.next_player()
-	_set_busy(false)
+## Satu tombol besar yang fungsinya berganti sesuai fase giliran.
+func _on_action_pressed() -> void:
+	match turn_manager.state:
+		TurnManager.State.WAIT_ROLL:
+			turn_manager.request_roll()
+		TurnManager.State.WAIT_END:
+			if turn_manager.can_roll_again:
+				turn_manager.request_roll()
+			else:
+				turn_manager.request_end_turn()
 
 
-## Selama animasi: tombol dimatikan dan layar tidak boleh ditinggalkan.
-func _set_busy(busy: bool) -> void:
-	is_busy = busy
-	roll_button.disabled = busy
-	menu_button.disabled = busy
+func _on_turn_state_changed(state: TurnManager.State) -> void:
+	var idle: bool = turn_manager.is_idle()
+	action_button.disabled = not idle
+	menu_button.disabled = not idle
+	match state:
+		TurnManager.State.WAIT_ROLL:
+			action_button.text = "LEMPAR DADU"
+		TurnManager.State.WAIT_END:
+			action_button.text = "DOBEL! LEMPAR LAGI" if turn_manager.can_roll_again else "SELESAI GILIRAN"
 
 
 ## Dipanggil SceneRouter sebelum pindah layar (tombol MENU / Back Android).
 func can_leave() -> bool:
-	return not is_busy
+	return turn_manager.is_idle()
+
+
+# ---------- View: dipanggil oleh TurnManager ----------
+
+func animate_roll(roll: Dictionary) -> void:
+	await board_view.dice_view.play_roll(roll.die_1, roll.die_2)
+
+
+func animate_move(player: PlayerState, path: Array[int]) -> void:
+	await board_view.move_token(player.id, path)
+	board_view.select_tile(path[-1])
+
+
+func show_message(title: String, body: String) -> void:
+	board_view.show_center_message(title, body)
 
 
 # ---------- Tampilan pemain ----------
