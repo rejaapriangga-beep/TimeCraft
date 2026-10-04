@@ -26,7 +26,14 @@ jobs:
           cache: gradle
 
       - name: Set up Android SDK
+        # packages dioverride dari default action ("tools platform-tools") - paket "tools"
+        # (SDK Tools lama, beda dari "cmdline-tools") sudah dihapus dari repository Google,
+        # jadi default action ini sekarang SELALU gagal (exit 1, "Failed to find package
+        # 'tools'") tanpa override ini. platform-tools tetap diinstal di sini (langkah
+        # berikutnya juga memintanya lagi, tapi sdkmanager idempotent - aman diulang).
         uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools"
 
       - name: Install SDK platform & build-tools yang dibutuhkan
         run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
@@ -66,7 +73,11 @@ jobs:
           cache: gradle
 
       - name: Set up Android SDK
+        # Lihat catatan di job build-debug-apk di atas - paket "tools" default action ini
+        # sudah tidak ada lagi di repository Google.
         uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools"
 
       - name: Install SDK platform & build-tools yang dibutuhkan
         run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
