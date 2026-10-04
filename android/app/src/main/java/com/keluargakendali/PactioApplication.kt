@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.os.Bundle
+import com.google.android.gms.ads.MobileAds
 import com.keluargakendali.data.LocaleHelper
 import com.keluargakendali.service.AppForegroundState
 
@@ -24,6 +25,11 @@ class PactioApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Inisialisasi sekali di level aplikasi - lihat ParentAdBanner.kt. Panggilannya
+        // sendiri melakukan network call ke server AdMob, jadi sengaja dijalankan di awal
+        // (bukan ditunda sampai banner pertama dirender) supaya iklan siap lebih cepat begitu
+        // dashboard orang tua dibuka.
+        MobileAds.initialize(this)
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityResumed(activity: Activity) = AppForegroundState.setResumed(true)
             override fun onActivityPaused(activity: Activity) = AppForegroundState.setResumed(false)

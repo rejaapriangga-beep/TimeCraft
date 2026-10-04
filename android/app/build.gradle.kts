@@ -107,4 +107,10 @@ dependencies {
     // juga tanpa dependency eksternal.
     implementation("androidx.security:security-crypto:1.1.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
+
+    // Iklan AdMob di dashboard orang tua (lihat ParentAdBanner.kt) - SATU-SATUNYA dependency
+    // di luar yang disebutkan di atas, sengaja dipisah komentarnya karena ini pengecualian
+    // terhadap filosofi "minim dependency" proyek ini: tidak ada cara memakai AdMob tanpa SDK
+    // resmi Google ini (beda dengan networking biasa yang bisa ditulis sendiri).
+    implementation("com.google.android.gms:play-services-ads:23.6.0")
 }

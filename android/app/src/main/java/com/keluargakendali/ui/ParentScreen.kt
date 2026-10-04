@@ -141,7 +141,8 @@ fun ParentScreen(
     onAddChild: (name: String, pin: String) -> Unit,
     onDismissMessage: () -> Unit,
     onRefreshChatUnread: () -> Unit,
-    tutorialState: TutorialCoachMarkState
+    tutorialState: TutorialCoachMarkState,
+    modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     var showCreateTask by remember { mutableStateOf(false) }
@@ -161,7 +162,7 @@ fun ParentScreen(
         TabItem(stringResource(R.string.tab_lock), Icons.Default.Lock)
     )
 
-    Column(Modifier.fillMaxSize()) {
+    Column(modifier.fillMaxSize()) {
         state.errorMessage?.let {
             Box(Modifier.padding(16.dp)) { ErrorBanner(it, onDismissMessage) }
         }

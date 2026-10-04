@@ -27,6 +27,18 @@
         android:supportsRtl="true"
         android:usesCleartextTraffic="false"
         android:theme="@style/Theme.KendaliKeluarga">
+
+        <!--
+            APP ID AdMob - lihat ParentAdBanner.kt. Ini ID TES RESMI Google
+            (ca-app-pub-3940256099942544~3347511713, sama untuk semua developer, dipakai di
+            dokumentasi resmi AdMob), BUKAN App ID TimeCraft sungguhan - WAJIB diganti ke App ID
+            asli dari akun AdMob sebelum rilis produksi (lihat https://support.google.com/admob/answer/9972781).
+            Tes ID ini aman dipakai terus selama pengembangan - menampilkan iklan tes asli ke
+            pengguna sungguhan (bukan tes) melanggar kebijakan AdMob.
+        -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
         <activity
             android:name=".MainActivity"
             android:exported="true">

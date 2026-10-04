@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
@@ -51,6 +52,7 @@ import com.keluargakendali.ui.ChildScreen
 import com.keluargakendali.ui.ChildSettingsDialog
 import com.keluargakendali.ui.CoachMarkOverlay
 import com.keluargakendali.ui.ContentControlIconButton
+import com.keluargakendali.ui.ParentAdBanner
 import com.keluargakendali.ui.ParentScreen
 import com.keluargakendali.ui.ParentSettingsDialog
 import com.keluargakendali.ui.PasswordField
@@ -224,16 +226,25 @@ private fun PactioApp() {
                         onDismissMessage = viewModel::dismissMessages
                     )
 
-                    state.currentUser?.role == "parent" -> ParentScreen(
-                        state = state,
-                        onDecide = viewModel::decideTask,
-                        onSetLock = { childId, enabled -> viewModel.setChildLock(childId, enabled) },
-                        onCreateTask = viewModel::createTask,
-                        onAddChild = viewModel::addChild,
-                        onDismissMessage = viewModel::dismissMessages,
-                        onRefreshChatUnread = viewModel::refreshChatUnread,
-                        tutorialState = tutorialState
-                    )
+                    // Iklan AdMob (lihat ParentAdBanner.kt) HANYA di dashboard orang tua - Column
+                    // dengan weight 9:1 membagi ruang di bawah TopAppBar persis 90%/10%, sesuai
+                    // permintaan "baris paling bawah sebesar 10% dari layar". ChildScreen di
+                    // bawah SENGAJA tidak dapat iklan sama sekali (lihat catatan kepatuhan di
+                    // ParentAdBanner.kt).
+                    state.currentUser?.role == "parent" -> Column(Modifier.fillMaxSize()) {
+                        ParentScreen(
+                            state = state,
+                            onDecide = viewModel::decideTask,
+                            onSetLock = { childId, enabled -> viewModel.setChildLock(childId, enabled) },
+                            onCreateTask = viewModel::createTask,
+                            onAddChild = viewModel::addChild,
+                            onDismissMessage = viewModel::dismissMessages,
+                            onRefreshChatUnread = viewModel::refreshChatUnread,
+                            tutorialState = tutorialState,
+                            modifier = Modifier.weight(9f)
+                        )
+                        ParentAdBanner(modifier = Modifier.weight(1f))
+                    }
 
                     else -> ChildScreen(
                         state = state,
