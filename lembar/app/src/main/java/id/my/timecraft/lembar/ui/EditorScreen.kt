@@ -68,6 +68,7 @@ import id.my.timecraft.lembar.data.InkStroke
 import id.my.timecraft.lembar.data.Note
 import id.my.timecraft.lembar.data.NoteMode
 import id.my.timecraft.lembar.data.Paper
+import id.my.timecraft.lembar.data.PenPrefs
 import id.my.timecraft.lembar.data.SPACES
 import id.my.timecraft.lembar.ui.ink.INK_ASPECT
 import id.my.timecraft.lembar.ui.ink.InkCanvas
@@ -98,8 +99,9 @@ fun EditorScreen(
     val undo = remember(initial.id) { mutableStateListOf<List<InkStroke>>() }
     var inkMode by rememberSaveable { mutableStateOf(InkMode.Pena) }
     var inkColor by rememberSaveable { mutableStateOf(InkColor.Tinta) }
-    var penOnly by rememberSaveable { mutableStateOf(false) }
-    var stylusSeen by rememberSaveable { mutableStateOf(false) }
+    val penPrefs = remember { PenPrefs(context) }
+    var penOnly by remember { mutableStateOf(penPrefs.penOnly) }
+    var stylusSeen by remember { mutableStateOf(penPrefs.stylusSeen) }
     var confirmDelete by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
 
@@ -186,8 +188,10 @@ fun EditorScreen(
                             onStylusDetected = {
                                 if (!stylusSeen) {
                                     stylusSeen = true
+                                    penPrefs.stylusSeen = true
                                     if (!penOnly) {
                                         penOnly = true
+                                        penPrefs.penOnly = true
                                         Toast.makeText(context, "Pensil terdeteksi, sentuhan telapak diabaikan", Toast.LENGTH_SHORT).show()
                                     }
                                 }
@@ -197,6 +201,7 @@ fun EditorScreen(
                                 if (undo.size > MAX_UNDO) undo.removeAt(0)
                             },
                             onStrokesChange = { draft = draft.copy(ink = it) },
+                            onDiscardLastUndo = { if (undo.isNotEmpty()) undo.removeAt(undo.lastIndex) },
                             resolve = c::inkOf,
                             paperLine = c.sky.copy(alpha = 0.45f),
                             paperDot = c.muted.copy(alpha = 0.45f),
@@ -213,7 +218,7 @@ fun EditorScreen(
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Switch(
-                        checked = penOnly, onCheckedChange = { penOnly = it },
+                        checked = penOnly, onCheckedChange = { penOnly = it; penPrefs.penOnly = it },
                         colors = SwitchDefaults.colors(checkedTrackColor = c.leaf)
                     )
                     Spacer(Modifier.width(8.dp))

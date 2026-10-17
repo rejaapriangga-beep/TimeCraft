@@ -9,8 +9,13 @@ Konsep dan prototipenya: https://claude.ai/artifact/C5AQTCFrNzkFgKfGVXNMuW
 - **Mode Tulis**: kanvas tulis tangan (rasio 3:4) dengan pena peka tekanan, stabilo,
   penghapus per goresan, 4 warna tinta, urungkan, dan kertas garis/titik/polos.
   - Ujung penghapus pada pensil (S Pen, pensil USI) langsung menghapus.
-  - Begitu pensil terdeteksi, "Hanya pensil" menyala otomatis sehingga telapak tangan
-    yang menempel di layar tidak ikut menggambar.
+  - Penolakan telapak (palm rejection):
+    - Pensil selalu menang. Kalau telapak menempel duluan lalu pensil menyentuh layar,
+      coretan telapak dibuang dan pensil langsung menulis.
+    - Telapak boleh terus bertumpu sementara pensil diangkat dan diturunkan berkali-kali.
+    - Sentuhan yang dibatalkan Android sendiri sebagai telapak juga dibuang.
+    - Begitu pensil pertama kali terdeteksi, "Hanya pensil" menyala otomatis dan diingat
+      untuk semua catatan, juga setelah aplikasi dibuka ulang. Bisa dimatikan manual.
 - Satu catatan boleh berisi teks dan tulisan tangan sekaligus.
 - Ruang Kerja / Belajar / Pribadi, sematkan, warna kartu, pencarian judul/isi/checklist.
 - **Tablet** (lebar ≥ 720 dp): daftar di kiri, editor di kanan.
