@@ -715,9 +715,6 @@ async function route(req, res) {
   // Kebijakan Penggunaan (Acceptable Use Policy) - larangan pakai chat/fitur keluarga untuk
   // aktivitas ilegal & jalur lapor penyalahgunaan, sama polanya dengan /privacy.
   if (req.method === "GET" && pathname === "/terms") { if (serveStatic(res, "terms.html")) return; }
-  // Kebijakan privasi aplikasi catatan Lembar (repo terpisah rejaapriangga-beep/Lembar) - URL publik untuk
-  // Play Console, ditumpangkan di domain yang sama karena Lembar sendiri tidak punya server.
-  if (req.method === "GET" && pathname === "/lembar/privacy") { if (serveStatic(res, "lembar-privacy.html")) return; }
 
   if (req.method === "GET" && pathname === "/health") return send(res, 200, { ok: true });
 
