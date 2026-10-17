@@ -8,6 +8,11 @@ Konsep dan prototipenya: https://claude.ai/artifact/C5AQTCFrNzkFgKfGVXNMuW
 - **Mode Ketik**: teks bebas + checklist dengan bilah progres di kartu.
 - **Mode Tulis**: kanvas tulis tangan (rasio 3:4) dengan pena peka tekanan, stabilo,
   penghapus per goresan, 4 warna tinta, urungkan, dan kertas garis/titik/polos.
+  - **Berlembar-lembar**: tambah lembar baru, pindah lembar, hapus atau bersihkan lembar
+    (semuanya bisa diurungkan).
+  - **Alat Pilih**: seret kotak untuk memblok coretan, lalu pindahkan (seret kotaknya),
+    salin, potong, hapus, tempel, atau ganti warnanya. Papan klip berlaku lintas lembar
+    dan lintas catatan.
   - Ujung penghapus pada pensil (S Pen, pensil USI) langsung menghapus.
   - Penolakan telapak (palm rejection):
     - Pensil selalu menang. Kalau telapak menempel duluan lalu pensil menyentuh layar,
@@ -17,7 +22,8 @@ Konsep dan prototipenya: https://claude.ai/artifact/C5AQTCFrNzkFgKfGVXNMuW
     - Begitu pensil pertama kali terdeteksi, "Hanya pensil" menyala otomatis dan diingat
       untuk semua catatan, juga setelah aplikasi dibuka ulang. Bisa dimatikan manual.
 - Satu catatan boleh berisi teks dan tulisan tangan sekaligus.
-- Ruang Kerja / Belajar / Pribadi, sematkan, warna kartu, pencarian judul/isi/checklist.
+- Ruang Kerja / Belajar / Pribadi, sematkan, 7 warna kartu (lewat lingkaran warna di bilah atas,
+  tersedia di mode Ketik maupun Tulis), pencarian judul/isi/checklist.
 - **Tablet** (lebar ≥ 720 dp): daftar di kiri, editor di kanan.
 - Simpan otomatis saat aplikasi ditutup atau berpindah catatan. Mode gelap mengikuti sistem.
 - Tanpa izin, tanpa internet, tanpa iklan. Semua data ada di `files/notes.json` di perangkat.

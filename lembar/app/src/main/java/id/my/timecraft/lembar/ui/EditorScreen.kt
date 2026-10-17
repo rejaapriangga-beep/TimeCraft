@@ -1,11 +1,33 @@
+@file:OptIn(ExperimentalLayoutApi::class)
+
 package id.my.timecraft.lembar.ui
 
 import android.widget.Toast
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.ContentCut
+import androidx.compose.material.icons.rounded.ContentPaste
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.vector.ImageVector
+import id.my.timecraft.lembar.data.InkPage
+import id.my.timecraft.lembar.ui.ink.InkClipboard
+import id.my.timecraft.lembar.ui.ink.boundsOf
+import id.my.timecraft.lembar.ui.ink.clampMove
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -83,6 +105,7 @@ private const val MAX_UNDO = 50
  * (tombol Simpan, panah kembali, atau tombol back sistem). [onDraftChange] dipanggil setiap
  * draft berubah supaya aktivitas bisa menyimpan otomatis saat aplikasi ditutup.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditorScreen(
     initial: Note,
@@ -96,7 +119,10 @@ fun EditorScreen(
     val c = Lembar.colors
     val context = LocalContext.current
     var draft by remember(initial.id) { mutableStateOf(initial) }
-    val undo = remember(initial.id) { mutableStateListOf<List<InkStroke>>() }
+    // Riwayat urungkan menyimpan seluruh lembar, jadi menambah/menghapus lembar juga bisa diurungkan.
+    val undo = remember(initial.id) { mutableStateListOf<List<InkPage>>() }
+    var pageIndex by remember(initial.id) { mutableIntStateOf(0) }
+    var selected by remember(initial.id) { mutableStateOf<Set<InkStroke>>(emptySet()) }
     var inkMode by rememberSaveable { mutableStateOf(InkMode.Pena) }
     var inkColor by rememberSaveable { mutableStateOf(InkColor.Tinta) }
     val penPrefs = remember { PenPrefs(context) }
@@ -104,9 +130,28 @@ fun EditorScreen(
     var stylusSeen by remember { mutableStateOf(penPrefs.stylusSeen) }
     var confirmDelete by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
+    var showDetails by remember { mutableStateOf(false) }
+    var pageMenu by remember { mutableStateOf(false) }
+
+    val page = pageIndex.coerceIn(0, draft.pages.lastIndex)
+    val strokes = draft.pages[page]
+    val selection = strokes.filter { it in selected }
 
     LaunchedEffect(draft) { onDraftChange(draft) }
     BackHandler { onDone(draft) }
+
+    fun toast(msg: String) = Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+    fun snapshot() {
+        undo.add(draft.pages)
+        if (undo.size > MAX_UNDO) undo.removeAt(0)
+    }
+    fun setStrokes(list: List<InkStroke>) {
+        draft = draft.copy(pages = draft.pages.replace(page, list))
+    }
+    fun goTo(i: Int) {
+        pageIndex = i
+        selected = emptySet()
+    }
 
     Column(modifier.fillMaxSize().background(c.surface)) {
         // ---------- bilah atas ----------
@@ -121,6 +166,10 @@ fun EditorScreen(
                 }
             }
             Spacer(Modifier.weight(1f))
+            // Lingkaran warna kartu: membuka pilihan ruang dan warna kartu (berlaku di kedua mode).
+            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                Swatch(c.cardOf(draft.color), selected = false, label = "Ruang dan warna kartu", onClick = { showDetails = true }, size = 28)
+            }
             IconButton(onClick = { draft = draft.copy(pinned = !draft.pinned) }) {
                 Icon(
                     Icons.Rounded.PushPin,
@@ -160,17 +209,72 @@ fun EditorScreen(
         when (draft.mode) {
             NoteMode.Ketik -> TypePane(draft, onChange = { draft = it }, modifier = Modifier.weight(1f))
             NoteMode.Tulis -> Column(
-                Modifier.weight(1f).padding(horizontal = 20.dp).padding(bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                Modifier.weight(1f).padding(horizontal = 20.dp).padding(bottom = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 InkToolbar(
-                    mode = inkMode, onMode = { inkMode = it },
-                    color = inkColor, onColor = { inkColor = it; if (inkMode == InkMode.Hapus) inkMode = InkMode.Pena },
+                    mode = inkMode,
+                    onMode = {
+                        inkMode = it
+                        if (it != InkMode.Pilih) selected = emptySet()
+                    },
+                    color = inkColor,
+                    onColor = { ic ->
+                        if (inkMode == InkMode.Pilih && selection.isNotEmpty()) {
+                            // Mengganti warna coretan yang sedang dipilih.
+                            snapshot()
+                            val recolored = selection.associateWith { it.recolored(ic) }
+                            setStrokes(strokes.map { recolored[it] ?: it })
+                            selected = recolored.values.toSet()
+                        } else {
+                            inkColor = ic
+                            if (inkMode == InkMode.Hapus || inkMode == InkMode.Pilih) {
+                                inkMode = InkMode.Pena
+                                selected = emptySet()
+                            }
+                        }
+                    },
                     canUndo = undo.isNotEmpty(),
-                    onUndo = { if (undo.isNotEmpty()) draft = draft.copy(ink = undo.removeAt(undo.lastIndex)) },
+                    onUndo = {
+                        if (undo.isNotEmpty()) {
+                            draft = draft.copy(pages = undo.removeAt(undo.lastIndex))
+                            selected = emptySet()
+                        }
+                    },
                     paper = draft.paper,
                     onPaper = { draft = draft.copy(paper = Paper.entries[(draft.paper.ordinal + 1) % Paper.entries.size]) }
                 )
+                if (inkMode == InkMode.Pilih) {
+                    SelectionBar(
+                        count = selection.size,
+                        canPaste = InkClipboard.strokes.isNotEmpty(),
+                        onCopy = {
+                            InkClipboard.strokes = selection
+                            toast("${selection.size} coretan disalin")
+                        },
+                        onCut = {
+                            InkClipboard.strokes = selection
+                            snapshot()
+                            setStrokes(strokes.filterNot { it in selected })
+                            selected = emptySet()
+                            toast("${selection.size} coretan dipotong")
+                        },
+                        onDelete = {
+                            snapshot()
+                            setStrokes(strokes.filterNot { it in selected })
+                            selected = emptySet()
+                        },
+                        onPaste = {
+                            val clip = InkClipboard.strokes
+                            // Ditempel sedikit bergeser supaya tidak menumpuk persis di atas aslinya.
+                            val shift = boundsOf(clip)?.let { clampMove(it, 40f, 40f) } ?: Offset.Zero
+                            val pasted = clip.map { it.translated(shift.x, shift.y) }
+                            snapshot()
+                            setStrokes(strokes + pasted)
+                            selected = pasted.toSet()
+                        }
+                    )
+                }
                 Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                     Box(
                         Modifier
@@ -180,11 +284,13 @@ fun EditorScreen(
                             .border(1.dp, c.line, RoundedCornerShape(16.dp))
                     ) {
                         InkCanvas(
-                            strokes = draft.ink,
+                            strokes = strokes,
                             paper = draft.paper,
                             mode = inkMode,
                             color = inkColor,
                             penOnly = penOnly,
+                            selected = selected,
+                            onSelect = { selected = it },
                             onStylusDetected = {
                                 if (!stylusSeen) {
                                     stylusSeen = true
@@ -192,26 +298,73 @@ fun EditorScreen(
                                     if (!penOnly) {
                                         penOnly = true
                                         penPrefs.penOnly = true
-                                        Toast.makeText(context, "Pensil terdeteksi, sentuhan telapak diabaikan", Toast.LENGTH_SHORT).show()
+                                        toast("Pensil terdeteksi, sentuhan telapak diabaikan")
                                     }
                                 }
                             },
-                            onBeforeChange = {
-                                undo.add(draft.ink)
-                                if (undo.size > MAX_UNDO) undo.removeAt(0)
-                            },
-                            onStrokesChange = { draft = draft.copy(ink = it) },
+                            onBeforeChange = { snapshot() },
+                            onStrokesChange = { setStrokes(it) },
                             onDiscardLastUndo = { if (undo.isNotEmpty()) undo.removeAt(undo.lastIndex) },
                             resolve = c::inkOf,
                             paperLine = c.sky.copy(alpha = 0.45f),
                             paperDot = c.muted.copy(alpha = 0.45f),
+                            selectionColor = c.leaf,
                             modifier = Modifier.fillMaxSize()
                         )
-                        if (draft.ink.isEmpty()) {
+                        if (strokes.isEmpty()) {
                             Text(
-                                "tulis di sini…",
+                                if (inkMode == InkMode.Pilih) "lembar ini masih kosong" else "tulis di sini…",
                                 style = TextStyle(fontFamily = Caveat, fontSize = 26.sp, color = c.muted),
                                 modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+                    }
+                }
+
+                // ---------- navigasi lembar ----------
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { goTo(page - 1) }, enabled = page > 0) {
+                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = "Lembar sebelumnya", tint = if (page > 0) c.ink else c.line)
+                    }
+                    Text(
+                        "Lembar ${page + 1} / ${draft.pages.size}",
+                        style = MaterialTheme.typography.labelMedium, color = c.ink
+                    )
+                    IconButton(onClick = { goTo(page + 1) }, enabled = page < draft.pages.lastIndex) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Lembar berikutnya",
+                            tint = if (page < draft.pages.lastIndex) c.ink else c.line
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    TextButton(onClick = {
+                        draft = draft.copy(pages = draft.pages.toMutableList().apply { add(page + 1, emptyList()) })
+                        goTo(page + 1)
+                    }) {
+                        Icon(Icons.Rounded.Add, contentDescription = null, tint = c.leaf, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Lembar baru", color = c.leaf, style = MaterialTheme.typography.labelLarge)
+                    }
+                    Box {
+                        IconButton(onClick = { pageMenu = true }) {
+                            Icon(Icons.Rounded.MoreVert, contentDescription = "Menu lembar", tint = c.ink)
+                        }
+                        DropdownMenu(expanded = pageMenu, onDismissRequest = { pageMenu = false }, containerColor = c.surface) {
+                            DropdownMenuItem(
+                                text = { Text("Bersihkan lembar ini") },
+                                enabled = strokes.isNotEmpty(),
+                                onClick = { pageMenu = false; confirmClear = true }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Hapus lembar ini", color = if (draft.pages.size > 1) c.danger else c.line) },
+                                enabled = draft.pages.size > 1,
+                                onClick = {
+                                    pageMenu = false
+                                    snapshot()
+                                    draft = draft.copy(pages = draft.pages.filterIndexed { i, _ -> i != page })
+                                    goTo((page - 1).coerceAtLeast(0))
+                                    toast("Lembar dihapus. Tekan urungkan untuk mengembalikan.")
+                                }
                             )
                         }
                     }
@@ -221,10 +374,34 @@ fun EditorScreen(
                         checked = penOnly, onCheckedChange = { penOnly = it; penPrefs.penOnly = it },
                         colors = SwitchDefaults.colors(checkedTrackColor = c.leaf)
                     )
-                    Spacer(Modifier.width(8.dp))
-                    Text("Hanya pensil", style = MaterialTheme.typography.labelMedium, color = c.ink, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { if (draft.ink.isNotEmpty()) confirmClear = true }) {
-                        Text("Bersihkan", color = c.danger, style = MaterialTheme.typography.labelLarge)
+                    Spacer(Modifier.width(10.dp))
+                    Text("Hanya pensil (abaikan sentuhan telapak)", style = MaterialTheme.typography.labelMedium, color = c.ink)
+                }
+            }
+        }
+    }
+
+    if (showDetails) {
+        ModalBottomSheet(
+            onDismissRequest = { showDetails = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = c.surface
+        ) {
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                SectionLabel("Ruang")
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    SPACES.forEach { s -> Pill(s, selected = s == draft.space, onClick = { draft = draft.copy(space = s) }) }
+                }
+                SectionLabel("Warna kartu")
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    CardColor.entries.forEach { cc ->
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Swatch(c.cardOf(cc), selected = cc == draft.color, label = "Warna ${cc.label}", onClick = { draft = draft.copy(color = cc) }, size = 40)
+                            Text(cc.label, style = MaterialTheme.typography.bodySmall, color = c.muted)
+                        }
                     }
                 }
             }
@@ -246,13 +423,14 @@ fun EditorScreen(
     if (confirmClear) {
         AlertDialog(
             onDismissRequest = { confirmClear = false },
-            title = { Text("Bersihkan halaman?") },
-            text = { Text("Semua tulisan tangan di catatan ini akan dihapus. Kamu masih bisa mengurungkannya.") },
+            title = { Text("Bersihkan lembar ini?") },
+            text = { Text("Semua tulisan tangan di lembar ini akan dihapus. Kamu masih bisa mengurungkannya.") },
             confirmButton = {
                 TextButton(onClick = {
                     confirmClear = false
-                    undo.add(draft.ink)
-                    draft = draft.copy(ink = emptyList())
+                    snapshot()
+                    setStrokes(emptyList())
+                    selected = emptySet()
                 }) { Text("Bersihkan", color = c.danger) }
             },
             dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Batal", color = c.ink) } },
@@ -344,20 +522,9 @@ private fun TypePane(draft: Note, onChange: (Note) -> Unit, modifier: Modifier) 
                 .padding(12.dp),
             contentAlignment = Alignment.Center
         ) { Text("+ Tambah item", style = MaterialTheme.typography.labelLarge, color = c.leaf) }
-
-        SectionLabel("Ruang")
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            SPACES.forEach { s -> Pill(s, selected = s == draft.space, onClick = { onChange(draft.copy(space = s)) }) }
-        }
-
-        SectionLabel("Warna kartu")
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            CardColor.entries.forEach { cc ->
-                Swatch(c.cardOf(cc), selected = cc == draft.color, label = "Warna ${cc.key}", onClick = { onChange(draft.copy(color = cc)) })
-            }
-        }
     }
 }
+
 
 @Composable
 private fun InkToolbar(
@@ -367,32 +534,68 @@ private fun InkToolbar(
     paper: Paper, onPaper: () -> Unit
 ) {
     val c = Lembar.colors
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    // FlowRow: di ponsel sempit alat-alat turun ke baris kedua, tidak terpotong di kanan.
+    FlowRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        ToolChip("Pena", mode == InkMode.Pena) { onMode(InkMode.Pena) }
-        ToolChip("Stabilo", mode == InkMode.Stabilo) { onMode(InkMode.Stabilo) }
-        ToolChip("Hapus", mode == InkMode.Hapus) { onMode(InkMode.Hapus) }
-        Divider()
-        listOf(InkColor.Tinta, InkColor.Hijau, InkColor.Biru, InkColor.Peach).forEach { ic ->
-            Swatch(c.inkOf(ic), selected = ic == color && mode != InkMode.Hapus, label = "Tinta ${ic.key}", onClick = { onColor(ic) }, size = 26)
+        Pill("Pena", mode == InkMode.Pena, { onMode(InkMode.Pena) })
+        Pill("Stabilo", mode == InkMode.Stabilo, { onMode(InkMode.Stabilo) })
+        Pill("Hapus", mode == InkMode.Hapus, { onMode(InkMode.Hapus) })
+        Pill("Pilih", mode == InkMode.Pilih, { onMode(InkMode.Pilih) })
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.height(40.dp)
+        ) {
+            listOf(InkColor.Tinta, InkColor.Hijau, InkColor.Biru, InkColor.Peach).forEach { ic ->
+                Swatch(
+                    c.inkOf(ic), selected = ic == color && mode != InkMode.Hapus,
+                    label = "Tinta ${ic.key}", onClick = { onColor(ic) }, size = 26
+                )
+            }
+            IconButton(onClick = onUndo, enabled = canUndo) {
+                Icon(Icons.AutoMirrored.Rounded.Undo, contentDescription = "Urungkan", tint = if (canUndo) c.ink else c.line)
+            }
+            Pill(paper.label, false, onPaper)
         }
-        Divider()
-        IconButton(onClick = onUndo, enabled = canUndo) {
-            Icon(Icons.AutoMirrored.Rounded.Undo, contentDescription = "Urungkan", tint = if (canUndo) c.ink else c.line)
+    }
+}
+
+/** Aksi untuk coretan terpilih di mode Pilih. */
+@Composable
+private fun SelectionBar(
+    count: Int, canPaste: Boolean,
+    onCopy: () -> Unit, onCut: () -> Unit, onDelete: () -> Unit, onPaste: () -> Unit
+) {
+    val c = Lembar.colors
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(c.leafSoft).padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            if (count == 0) "Seret kotak di lembar untuk memilih coretan" else "$count coretan dipilih. Seret kotaknya untuk memindahkan.",
+            style = MaterialTheme.typography.bodySmall, color = c.ink
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            SelectionAction(Icons.Rounded.ContentCopy, "Salin", count > 0, onCopy)
+            SelectionAction(Icons.Rounded.ContentCut, "Potong", count > 0, onCut)
+            SelectionAction(Icons.Rounded.Delete, "Hapus", count > 0, onDelete)
+            SelectionAction(Icons.Rounded.ContentPaste, "Tempel", canPaste, onPaste)
         }
-        ToolChip(paper.label, false, onClick = onPaper)
     }
 }
 
 @Composable
-private fun ToolChip(label: String, selected: Boolean, onClick: () -> Unit) = Pill(label, selected, onClick)
-
-@Composable
-private fun Divider() {
-    Box(Modifier.width(1.dp).height(22.dp).background(Lembar.colors.line))
+private fun SelectionAction(icon: ImageVector, label: String, enabled: Boolean, onClick: () -> Unit) {
+    val c = Lembar.colors
+    val tint = if (enabled) c.ink else c.muted.copy(alpha = 0.5f)
+    TextButton(onClick = onClick, enabled = enabled) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(label, color = tint, style = MaterialTheme.typography.labelLarge)
+    }
 }
 
 private fun <T> List<T>.replace(index: Int, value: T): List<T> = mapIndexed { i, v -> if (i == index) value else v }

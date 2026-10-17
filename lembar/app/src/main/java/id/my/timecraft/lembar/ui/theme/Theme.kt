@@ -42,6 +42,9 @@ data class LembarColors(
     val leaf: Color,
     val leafSoft: Color,
     val peach: Color,
+    val peachSoft: Color,
+    val lilac: Color,
+    val rose: Color,
     val danger: Color
 ) {
     fun cardOf(c: CardColor) = when (c) {
@@ -49,6 +52,9 @@ data class LembarColors(
         CardColor.Kuning -> sun
         CardColor.Hijau -> leafSoft
         CardColor.Biru -> skySoft
+        CardColor.Peach -> peachSoft
+        CardColor.Ungu -> lilac
+        CardColor.Merah -> rose
     }
 
     fun onCardOf(c: CardColor) = if (c == CardColor.Kuning) onSun else ink
@@ -66,14 +72,16 @@ private val Light = LembarColors(
     bg = Color(0xFFFBFAF7), card = Color(0xFFF3F0EA), surface = Color(0xFFFFFFFF),
     ink = Color(0xFF1B1A26), muted = Color(0xFF5E5B6B), line = Color(0xFFE4DFD6),
     sun = Color(0xFFEFD27C), onSun = Color(0xFF1B1A26), sky = Color(0xFF7FC6EA), skySoft = Color(0xFFD3ECF8),
-    leaf = Color(0xFF00A86B), leafSoft = Color(0xFFDDF3E9), peach = Color(0xFFF0B48C), danger = Color(0xFFC2412D)
+    leaf = Color(0xFF00A86B), leafSoft = Color(0xFFDDF3E9), peach = Color(0xFFF0B48C),
+    peachSoft = Color(0xFFF9DFCC), lilac = Color(0xFFE6E0F6), rose = Color(0xFFF7D9DE), danger = Color(0xFFC2412D)
 )
 
 private val Dark = LembarColors(
     bg = Color(0xFF15141B), card = Color(0xFF211F29), surface = Color(0xFF1B1A22),
     ink = Color(0xFFF2EFE8), muted = Color(0xFFA9A5B5), line = Color(0xFF33303D),
     sun = Color(0xFFD9B95E), onSun = Color(0xFF1B1A26), sky = Color(0xFF6FB8DE), skySoft = Color(0xFF1F3542),
-    leaf = Color(0xFF2BC48A), leafSoft = Color(0xFF173A2D), peach = Color(0xFFD99A72), danger = Color(0xFFF07A64)
+    leaf = Color(0xFF2BC48A), leafSoft = Color(0xFF173A2D), peach = Color(0xFFD99A72),
+    peachSoft = Color(0xFF412E23), lilac = Color(0xFF2E2943), rose = Color(0xFF412630), danger = Color(0xFFF07A64)
 )
 
 val LocalLembarColors = staticCompositionLocalOf { Light }

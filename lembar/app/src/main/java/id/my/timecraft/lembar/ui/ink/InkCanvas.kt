@@ -29,15 +29,24 @@ import id.my.timecraft.lembar.data.InkColor
 import id.my.timecraft.lembar.data.InkStroke
 import id.my.timecraft.lembar.data.InkTool
 import id.my.timecraft.lembar.data.Paper
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.unit.dp
+import kotlin.math.abs
 import kotlin.math.hypot
 
-enum class InkMode { Pena, Stabilo, Hapus }
+enum class InkMode { Pena, Stabilo, Hapus, Pilih }
 
 /** Jarak (unit logis) dari titik penghapus ke titik goresan yang dianggap "kena". */
 private const val ERASE_RADIUS = 28f
 
 /**
- * Kanvas tulis tangan.
+ * Kanvas tulis tangan untuk satu lembar.
  *
  * - Tebal goresan mengikuti tekanan pensil ([PointerInputChange.pressure]); jari dan mouse
  *   memakai tekanan sedang.
@@ -48,10 +57,13 @@ private const val ERASE_RADIUS = 28f
  *   3. Sentuhan yang dibatalkan Android sendiri sebagai telapak juga dibuang.
  *   [onStylusDetected] dipanggil setiap ada event pensil supaya mode 1 bisa dinyalakan otomatis.
  * - Ujung penghapus pensil (PointerType.Eraser) selalu menghapus, apa pun alat yang dipilih.
- * - Penghapus bekerja per goresan utuh. Setiap perubahan dilaporkan lewat [onStrokesChange];
- *   [onBeforeChange] dipanggil sekali sebelum perubahan pertama supaya pemanggil bisa menyimpan
- *   riwayat untuk tombol urungkan; [onDiscardLastUndo] membatalkan entri itu lagi kalau goresan
- *   penghapusnya ternyata dari telapak.
+ * - Penghapus bekerja per goresan utuh.
+ * - Mode [InkMode.Pilih]: seret untuk membuat kotak pilihan; seret dari dalam kotak pilihan
+ *   untuk memindahkan coretan terpilih. Pilihan dikelola pemanggil lewat [selected]/[onSelect].
+ *
+ * Setiap perubahan goresan dilaporkan lewat [onStrokesChange]; [onBeforeChange] dipanggil sekali
+ * sebelum perubahan pertama supaya pemanggil bisa menyimpan riwayat urungkan, dan
+ * [onDiscardLastUndo] membatalkan entri itu lagi kalau perubahannya ternyata dari telapak.
  */
 @Composable
 fun InkCanvas(
@@ -60,6 +72,8 @@ fun InkCanvas(
     mode: InkMode,
     color: InkColor,
     penOnly: Boolean,
+    selected: Set<InkStroke>,
+    onSelect: (Set<InkStroke>) -> Unit,
     onStylusDetected: () -> Unit,
     onBeforeChange: () -> Unit,
     onStrokesChange: (List<InkStroke>) -> Unit,
@@ -67,12 +81,15 @@ fun InkCanvas(
     resolve: (InkColor) -> Color,
     paperLine: Color,
     paperDot: Color,
+    selectionColor: Color,
     modifier: Modifier = Modifier
 ) {
     val currentStrokes by rememberUpdatedState(strokes)
     val currentMode by rememberUpdatedState(mode)
     val currentColor by rememberUpdatedState(color)
     val currentPenOnly by rememberUpdatedState(penOnly)
+    val currentSelected by rememberUpdatedState(selected)
+    val select by rememberUpdatedState(onSelect)
     val stylusDetected by rememberUpdatedState(onStylusDetected)
     val beforeChange by rememberUpdatedState(onBeforeChange)
     val strokesChange by rememberUpdatedState(onStrokesChange)
@@ -81,6 +98,9 @@ fun InkCanvas(
     // Goresan yang sedang ditulis disimpan di buffer biasa; [liveCount] memicu gambar ulang.
     val live = remember { LiveStroke() }
     var liveCount by remember { mutableIntStateOf(0) }
+    // Mode Pilih: kotak yang sedang ditarik, dan geseran sementara coretan terpilih.
+    var marquee by remember { mutableStateOf<Rect?>(null) }
+    var dragOffset by remember { mutableStateOf(Offset.Zero) }
 
     // Diisi oleh motionEventSpy saat Android sendiri membatalkan sentuhan karena dikenali sebagai
     // telapak (ACTION_CANCEL, atau FLAG_CANCELED di Android 13+). Goresan sentuhan yang sedang
@@ -109,13 +129,15 @@ fun InkCanvas(
                     fun isPen(c: PointerInputChange) = c.type == PointerType.Stylus || c.type == PointerType.Eraser
                     fun pressureOf(c: PointerInputChange) = if (isPen(c)) c.pressure else 0.5f
 
-                    // Goresan aktif: hanya satu pointer yang menulis pada satu waktu.
+                    // Goresan aktif: hanya satu pointer yang bekerja pada satu waktu.
                     var active: PointerId? = null
                     var activeIsPen = false
-                    var erasing = false
-                    var base = currentStrokes      // goresan sebelum goresan aktif dimulai
+                    var action = Action.Draw
+                    var base = currentStrokes      // goresan sebelum aksi aktif dimulai
                     var working = currentStrokes   // hasil penghapus sementara (bisa banyak titik per frame)
-                    var changed = false            // penghapus sudah mengubah sesuatu di goresan ini
+                    var changed = false            // penghapus sudah mengubah sesuatu di aksi ini
+                    var anchor = Offset.Zero       // titik awal kotak pilihan / pemindahan
+                    var moving: Set<InkStroke> = emptySet()
 
                     fun begin(c: PointerInputChange) {
                         active = c.id
@@ -123,12 +145,33 @@ fun InkCanvas(
                         base = currentStrokes
                         working = base
                         changed = false
-                        erasing = currentMode == InkMode.Hapus || c.type == PointerType.Eraser
-                        if (!erasing) {
-                            val tool = if (currentMode == InkMode.Stabilo) InkTool.Stabilo else InkTool.Pena
-                            // Stabilo dengan tinta hitam tidak berguna, jadi otomatis jadi kuning.
-                            val ink = if (tool == InkTool.Stabilo && currentColor == InkColor.Tinta) InkColor.Kuning else currentColor
-                            live.start(tool, ink)
+                        val p = logical(c.position)
+                        action = when {
+                            c.type == PointerType.Eraser || currentMode == InkMode.Hapus -> Action.Erase
+                            currentMode == InkMode.Pilih -> {
+                                val sel = currentSelected.filter { it in base }.toSet()
+                                val box = boundsOf(sel, pad = 30f)
+                                if (box != null && box.contains(p)) {
+                                    moving = sel
+                                    Action.Move
+                                } else {
+                                    select(emptySet())
+                                    Action.Marquee
+                                }
+                            }
+                            else -> Action.Draw
+                        }
+                        anchor = p
+                        when (action) {
+                            Action.Draw -> {
+                                val tool = if (currentMode == InkMode.Stabilo) InkTool.Stabilo else InkTool.Pena
+                                // Stabilo dengan tinta hitam tidak berguna, jadi otomatis jadi kuning.
+                                val ink = if (tool == InkTool.Stabilo && currentColor == InkColor.Tinta) InkColor.Kuning else currentColor
+                                live.start(tool, ink)
+                            }
+                            Action.Marquee -> marquee = Rect(p, p)
+                            Action.Move -> dragOffset = Offset.Zero
+                            Action.Erase -> Unit
                         }
                     }
 
@@ -144,38 +187,67 @@ fun InkCanvas(
                     }
 
                     fun extend(c: PointerInputChange) {
-                        if (erasing) {
-                            c.historical.forEach { eraseAt(it.position) }
-                            eraseAt(c.position)
-                        } else {
-                            val pressure = pressureOf(c)
-                            c.historical.forEach { live.add(logical(it.position), pressure) }
-                            live.add(logical(c.position), pressure)
-                            liveCount = live.count
+                        when (action) {
+                            Action.Erase -> {
+                                c.historical.forEach { eraseAt(it.position) }
+                                eraseAt(c.position)
+                            }
+                            Action.Draw -> {
+                                val pressure = pressureOf(c)
+                                c.historical.forEach { live.add(logical(it.position), pressure) }
+                                live.add(logical(c.position), pressure)
+                                liveCount = live.count
+                            }
+                            Action.Marquee -> marquee = Rect(anchor, logical(c.position))
+                            Action.Move -> {
+                                val d = logical(c.position) - anchor
+                                dragOffset = boundsOf(moving)?.let { clampMove(it, d.x, d.y) } ?: d
+                            }
                         }
                     }
 
-                    // Goresan dari telapak/jari: buang seolah tidak pernah terjadi.
+                    // Aksi dari telapak/jari: buang seolah tidak pernah terjadi.
                     fun reject() {
-                        if (erasing) {
-                            if (changed) {
+                        when (action) {
+                            Action.Erase -> if (changed) {
                                 strokesChange(base)
                                 undoDiscard()
                             }
-                        } else {
-                            live.finish()
-                            liveCount = 0
+                            Action.Draw -> {
+                                live.finish()
+                                liveCount = 0
+                            }
+                            Action.Marquee -> marquee = null
+                            Action.Move -> dragOffset = Offset.Zero
                         }
                         active = null
                     }
 
                     fun commit() {
-                        if (!erasing) {
-                            val finished = live.finish()
-                            liveCount = 0
-                            if (finished != null) {
-                                beforeChange()
-                                strokesChange(base + finished)
+                        when (action) {
+                            Action.Erase -> Unit
+                            Action.Draw -> {
+                                val finished = live.finish()
+                                liveCount = 0
+                                if (finished != null) {
+                                    beforeChange()
+                                    strokesChange(base + finished)
+                                }
+                            }
+                            Action.Marquee -> {
+                                marquee?.let { select(selectIn(base, it)) }
+                                marquee = null
+                            }
+                            Action.Move -> {
+                                val d = dragOffset
+                                dragOffset = Offset.Zero
+                                if (d != Offset.Zero) {
+                                    val moved = HashMap<InkStroke, InkStroke>()
+                                    moving.forEach { moved[it] = it.translated(d.x, d.y) }
+                                    beforeChange()
+                                    strokesChange(base.map { moved[it] ?: it })
+                                    select(moved.values.toSet())
+                                }
                             }
                         }
                         active = null
@@ -188,8 +260,8 @@ fun InkCanvas(
                             val newDown = c.pressed && !c.previousPressed
                             when {
                                 newDown && pen -> {
-                                    // Pensil selalu menang: goresan sentuhan yang sedang berjalan
-                                    // (hampir pasti telapak) dibuang, lalu pensil mulai menulis.
+                                    // Pensil selalu menang: aksi sentuhan yang sedang berjalan
+                                    // (hampir pasti telapak) dibuang, lalu pensil mulai bekerja.
                                     if (active != null && !activeIsPen) reject()
                                     if (active == null) {
                                         begin(c)
@@ -226,18 +298,42 @@ fun InkCanvas(
                 }
             }
     ) {
-        // Lapisan 1: kertas + goresan tersimpan. Hanya digambar ulang kalau daftar goresan berubah.
+        // Lapisan 1: kertas + goresan tersimpan yang tidak terpilih.
         Canvas(Modifier.fillMaxSize()) {
             val scale = inkScale()
             drawPaper(paper, scale, paperLine, paperDot)
-            strokes.forEach { s -> drawInk(s.tool, s.color, s.points, s.size, scale, resolve) }
+            strokes.forEach { s -> if (s !in selected) drawInk(s.tool, s.color, s.points, s.size, scale, resolve) }
         }
-        // Lapisan 2: goresan yang sedang ditulis, digambar ulang setiap titik baru.
+        // Lapisan 2: coretan terpilih (ikut bergeser saat dipindah) + kotak pilihannya.
+        Canvas(Modifier.fillMaxSize()) {
+            val scale = inkScale()
+            val sel = strokes.filter { it in selected }
+            val d = dragOffset
+            translate(d.x * scale, d.y * scale) {
+                sel.forEach { s -> drawInk(s.tool, s.color, s.points, s.size, scale, resolve) }
+                boundsOf(sel)?.let { drawSelectionBox(it, scale, selectionColor) }
+            }
+            marquee?.let { drawSelectionBox(it, scale, selectionColor) }
+        }
+        // Lapisan 3: goresan yang sedang ditulis, digambar ulang setiap titik baru.
         Canvas(Modifier.fillMaxSize()) {
             val n = liveCount
             if (n > 0) drawInk(live.tool, live.color, live.buffer, n, inkScale(), resolve)
         }
     }
+}
+
+private enum class Action { Draw, Erase, Marquee, Move }
+
+private fun DrawScope.drawSelectionBox(r: Rect, scale: Float, color: Color) {
+    val left = minOf(r.left, r.right) * scale
+    val top = minOf(r.top, r.bottom) * scale
+    val size = Size(abs(r.width) * scale, abs(r.height) * scale)
+    drawRect(color, Offset(left, top), size, alpha = 0.08f)
+    drawRect(
+        color, Offset(left, top), size,
+        style = Stroke(width = 2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(14.dp.toPx(), 8.dp.toPx())))
+    )
 }
 
 private class PalmSignal { var canceled = false }

@@ -20,7 +20,7 @@ object SampleNotes {
         ),
         Note(
             title = "Sketsa alur aplikasi", space = "Kerja", mode = NoteMode.Tulis,
-            updatedAt = now - 3 * HOUR, ink = sketch()
+            updatedAt = now - 3 * HOUR, pages = listOf(sketch())
         ),
         Note(
             title = "Ide video: belajar Kotlin",

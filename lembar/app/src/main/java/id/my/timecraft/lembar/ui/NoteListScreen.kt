@@ -192,9 +192,10 @@ private fun NoteCard(note: Note, selected: Boolean, onClick: () -> Unit) {
                 )
                 if (note.pinned) Icon(Icons.Rounded.PushPin, contentDescription = "Disematkan", tint = fg, modifier = Modifier.size(18.dp))
             }
-            if (note.ink.isNotEmpty()) {
+            val firstPage = note.pages.firstOrNull { it.isNotEmpty() }
+            if (firstPage != null) {
                 InkPreview(
-                    note.ink,
+                    firstPage,
                     Modifier.fillMaxWidth().height(96.dp).clip(RoundedCornerShape(12.dp)).background(c.surface.copy(alpha = 0.55f))
                 )
             }
@@ -211,7 +212,10 @@ private fun NoteCard(note: Note, selected: Boolean, onClick: () -> Unit) {
             Row {
                 val meta = buildString {
                     append(note.space)
-                    if (note.ink.isNotEmpty()) append(" · tulis tangan")
+                    if (note.hasInk) {
+                        append(" · tulis tangan")
+                        if (note.pages.size > 1) append(" · ${note.pages.size} lembar")
+                    }
                     if (total > 0) append(" · $done/$total selesai")
                 }
                 Text(meta, style = MaterialTheme.typography.labelMedium, color = fg.copy(alpha = 0.7f), modifier = Modifier.weight(1f))

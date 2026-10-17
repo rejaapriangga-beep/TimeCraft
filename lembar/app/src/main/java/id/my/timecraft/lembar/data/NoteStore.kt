@@ -57,19 +57,16 @@ class NoteStore(context: Context) {
         put("checks", JSONArray().apply {
             n.checks.forEach { put(JSONObject().put("t", it.text).put("d", it.done)) }
         })
-        put("ink", JSONArray().apply {
-            n.ink.forEach { s ->
-                val pts = JSONArray()
-                // Dibulatkan 1 desimal: cukup presisi untuk ruang 1000x1333 dan berkas tetap kecil.
-                s.points.forEach { v -> pts.put(Math.round(v * 10) / 10.0) }
-                put(JSONObject().put("tool", s.tool.key).put("color", s.color.key).put("pts", pts))
-            }
+        put("pages", JSONArray().apply {
+            n.pages.forEach { page -> put(strokesToJson(page)) }
         })
     }
 
     private fun noteFromJson(o: JSONObject): Note {
         val checks = o.optJSONArray("checks") ?: JSONArray()
-        val ink = o.optJSONArray("ink") ?: JSONArray()
+        // "pages" sejak versi berlembar; catatan lama hanya punya satu lembar di "ink".
+        val pages = o.optJSONArray("pages")?.let { arr -> List(arr.length()) { strokesFromJson(arr.getJSONArray(it)) } }
+            ?: listOf(strokesFromJson(o.optJSONArray("ink") ?: JSONArray()))
         return Note(
             id = o.getString("id"),
             title = o.optString("title"),
@@ -84,15 +81,26 @@ class NoteStore(context: Context) {
                 val c = checks.getJSONObject(it)
                 CheckItem(c.optString("t"), c.optBoolean("d"))
             },
-            ink = List(ink.length()) {
-                val s = ink.getJSONObject(it)
-                val pts = s.getJSONArray("pts")
-                InkStroke(
-                    tool = InkTool.entries.firstOrNull { t -> t.key == s.optString("tool") } ?: InkTool.Pena,
-                    color = InkColor.entries.firstOrNull { c -> c.key == s.optString("color") } ?: InkColor.Tinta,
-                    points = FloatArray(pts.length()) { i -> pts.getDouble(i).toFloat() }
-                )
-            }
+            pages = pages.ifEmpty { listOf(emptyList()) }
+        )
+    }
+
+    private fun strokesToJson(strokes: List<InkStroke>) = JSONArray().apply {
+        strokes.forEach { s ->
+            val pts = JSONArray()
+            // Dibulatkan 1 desimal: cukup presisi untuk ruang 1000x1333 dan berkas tetap kecil.
+            s.points.forEach { v -> pts.put(Math.round(v * 10) / 10.0) }
+            put(JSONObject().put("tool", s.tool.key).put("color", s.color.key).put("pts", pts))
+        }
+    }
+
+    private fun strokesFromJson(arr: JSONArray) = List(arr.length()) {
+        val s = arr.getJSONObject(it)
+        val pts = s.getJSONArray("pts")
+        InkStroke(
+            tool = InkTool.entries.firstOrNull { t -> t.key == s.optString("tool") } ?: InkTool.Pena,
+            color = InkColor.entries.firstOrNull { c -> c.key == s.optString("color") } ?: InkColor.Tinta,
+            points = FloatArray(pts.length()) { i -> pts.getDouble(i).toFloat() }
         )
     }
 }
