@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- kertas -->
+    <path
+        android:fillColor="#FBFAF7"
+        android:strokeColor="#1B1A26"
+        android:strokeWidth="2.5"
+        android:pathData="M37,30h28a4,4 0,0 1,4 4v40a4,4 0,0 1,-4 4h-28a4,4 0,0 1,-4 -4v-40a4,4 0,0 1,4 -4z" />
+    <!-- garis tulisan -->
+    <path
+        android:strokeColor="#1B1A26"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M40,42h20M40,50h20M40,58h12" />
+    <!-- pensil hijau -->
+    <path
+        android:fillColor="#00A86B"
+        android:strokeColor="#1B1A26"
+        android:strokeWidth="2"
+        android:strokeLineJoin="round"
+        android:pathData="M56,73l2,-8l16,-16l6,6l-16,16z" />
+</vector>

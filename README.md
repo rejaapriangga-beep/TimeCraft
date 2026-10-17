@@ -18,6 +18,7 @@ abuse, atau root exploit.
 TimeCraft/
 ├── android/           # Aplikasi Android — Kotlin, Jetpack Compose, Material 3
 ├── backend/           # API Node.js (server.js), tanpa dependency eksternal
+├── lembar/            # Aplikasi catatan "Lembar" (proyek Android terpisah, lihat lembar/README.md)
 └── BUILD_ANDROID.md   # Cara build APK debug + langkah uji di HP
 ```
 

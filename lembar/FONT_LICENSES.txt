@@ -1,0 +1,6 @@
+Font Fraunces, Plus Jakarta Sans, dan Caveat di app/src/main/res/font diunduh dari
+repositori resmi Google Fonts (github.com/google/fonts) dan didistribusikan di bawah
+SIL Open Font License 1.1 (OFL), yang mengizinkan penggunaan di aplikasi komersial
+selama font tidak dijual terpisah.
+
+Teks lengkap lisensi: https://openfontlicense.org/documents/ofl.txt

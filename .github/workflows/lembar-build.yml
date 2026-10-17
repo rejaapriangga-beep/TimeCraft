@@ -1,0 +1,47 @@
+name: Lembar Build
+
+# Build APK debug aplikasi catatan Lembar (folder lembar/). Sama seperti android-build.yml,
+# hasilnya diunduh dari tab "Actions" -> run yang bersangkutan -> bagian "Artifacts".
+# Jalan di semua branch supaya perubahan bisa dicek sebelum di-merge.
+
+on:
+  push:
+    paths:
+      - "lembar/**"
+      - ".github/workflows/lembar-build.yml"
+  workflow_dispatch: {}
+
+jobs:
+  build-debug-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Set up Android SDK
+        # Paket default action ("tools") sudah dihapus dari repository Google, lihat android-build.yml.
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools"
+
+      - name: Install SDK platform & build-tools yang dibutuhkan
+        run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Build debug APK
+        working-directory: lembar
+        run: chmod +x gradlew && ./gradlew assembleDebug --stacktrace
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: lembar-debug-apk
+          path: lembar/app/build/outputs/apk/debug/Lembar-debug.apk
+          if-no-files-found: error
+          retention-days: 30
